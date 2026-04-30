@@ -37,15 +37,28 @@
     </nav>
 
     <h1 class="sector-title">조선</h1>
-    <p class="sector-analyst">담당 애널리스트 · 홍길동</p>
+
+    <!-- 섹터 요약 (Gemini 생성) -->
+    <section class="summary-box">
+      <div class="summary-label">
+        <span class="summary-tag">AI 요약</span>
+        <span class="summary-time">생성: 06:00</span>
+      </div>
+      <ul class="summary-list">
+        <li>카타르에너지 2차 LNG선 발주 임박, 국내 조선 3사 수혜 기대</li>
+        <li>2026년 상반기 후판가 톤당 2만원 인상 합의, 원가 부담 가시화</li>
+        <li>해외 LNG 운임 강세에 Flex LNG·Golar LNG 동반 강세</li>
+        <li>HD현대중공업 컨센서스 +5.2% 상향 (1.85조 → 1.95조)</li>
+      </ul>
+    </section>
 
     <!-- 섹터 핵심 이슈 -->
     <section class="block">
       <div class="block-header">
         <h2 class="block-title">섹터 핵심 이슈</h2>
-        <span class="block-count">3건</span>
+        <span class="block-count" id="news-count">3 / 8건</span>
       </div>
-      <ul class="news-list">
+      <ul class="news-list" id="news-list">
         <li class="news-item">
           <div class="news-meta">
             <span class="tag tag-positive">긍정</span>
@@ -73,7 +86,56 @@
           <a href="#" class="news-title">선박 후판 가격 톤당 2만원 인상 합의... 원가 부담 우려</a>
           <p class="news-summary">포스코·현대제철과 조선 3사 간 2026년 상반기 후판가 협상 결과 톤당 2만원 인상으로 합의. 영업이익률 0.3~0.5%p 하락 영향 추정.</p>
         </li>
+        <li class="news-item news-hidden">
+          <div class="news-meta">
+            <span class="tag tag-positive">긍정</span>
+            <span class="news-date">2026.04.30 07:15</span>
+            <span class="news-source">서울경제</span>
+          </div>
+          <a href="#" class="news-title">삼성중공업, 셸과 FLNG 1기 협상 본격화</a>
+          <p class="news-summary">셸이 모잠비크 Rovuma LNG 프로젝트용 FLNG 1기 발주를 검토 중이며 삼성중공업이 우선협상 후보로 알려짐.</p>
+        </li>
+        <li class="news-item news-hidden">
+          <div class="news-meta">
+            <span class="tag tag-neutral">중립</span>
+            <span class="news-date">2026.04.30 06:50</span>
+            <span class="news-source">아시아경제</span>
+          </div>
+          <a href="#" class="news-title">2026년 1분기 글로벌 신조 발주 14% 감소</a>
+          <p class="news-summary">Clarksons 집계 1Q26 글로벌 신조 발주는 전년 대비 14% 감소. 다만 LNG선·컨테이너선은 견조한 흐름 유지.</p>
+        </li>
+        <li class="news-item news-hidden">
+          <div class="news-meta">
+            <span class="tag tag-positive">긍정</span>
+            <span class="news-date">2026.04.29 18:20</span>
+            <span class="news-source">이데일리</span>
+          </div>
+          <a href="#" class="news-title">한화오션, 미 해군 함정 MRO 사업 본격 진출</a>
+          <p class="news-summary">한화오션이 미 해군 7함대 함정의 정비·수리·운영(MRO) 계약을 체결, 향후 5년간 약 1조원 매출 기대.</p>
+        </li>
+        <li class="news-item news-hidden">
+          <div class="news-meta">
+            <span class="tag tag-neutral">중립</span>
+            <span class="news-date">2026.04.29 16:00</span>
+            <span class="news-source">머니투데이</span>
+          </div>
+          <a href="#" class="news-title">IMO, 2027년 탄소 부과금 도입 일정 확정</a>
+          <p class="news-summary">국제해사기구 MEPC 회의 결과 2027년부터 선박 톤당 탄소 부과금 도입 확정. 친환경 선박 발주 가속화 전망.</p>
+        </li>
+        <li class="news-item news-hidden">
+          <div class="news-meta">
+            <span class="tag tag-positive">긍정</span>
+            <span class="news-date">2026.04.29 14:30</span>
+            <span class="news-source">파이낸셜뉴스</span>
+          </div>
+          <a href="#" class="news-title">HD한국조선해양, 1Q26 영업이익 132% YoY 증가</a>
+          <p class="news-summary">HD한국조선해양 1분기 잠정실적 발표. 영업이익 4,521억원 (+132% YoY), 매출 6.2조원 (+18% YoY).</p>
+        </li>
       </ul>
+      <button class="show-more-btn" id="show-more-news">
+        <span class="show-more-text">더보기 (5건 더)</span>
+        <span class="show-less-text">접기</span>
+      </button>
     </section>
 
     <!-- 미국 시장 동향 -->
@@ -124,6 +186,10 @@
               <span class="stock-code">329180</span>
               <span class="stock-name">HD현대중공업</span>
             </div>
+            <div class="stock-price">
+              <span class="price-num">258,500</span>
+              <span class="change change-up">+3.4%</span>
+            </div>
             <div class="stock-counts">
               <span class="badge">공시 2</span>
               <span class="badge">컨센 1</span>
@@ -171,6 +237,10 @@
               <span class="stock-code">010140</span>
               <span class="stock-name">삼성중공업</span>
             </div>
+            <div class="stock-price">
+              <span class="price-num">12,840</span>
+              <span class="change change-up">+1.8%</span>
+            </div>
             <div class="stock-counts">
               <span class="badge">공시 1</span>
               <span class="badge">컨센 0</span>
@@ -209,6 +279,10 @@
             <div class="stock-head">
               <span class="stock-code">042660</span>
               <span class="stock-name">한화오션</span>
+            </div>
+            <div class="stock-price">
+              <span class="price-num">82,400</span>
+              <span class="change change-down">-0.7%</span>
             </div>
             <div class="stock-counts">
               <span class="badge">공시 0</span>
@@ -254,6 +328,25 @@
   </footer>
 
   <script>
+    // 섹터 핵심이슈 더보기 토글
+    const showMoreBtn = document.getElementById('show-more-news');
+    const newsList = document.getElementById('news-list');
+    const newsCount = document.getElementById('news-count');
+    const totalNews = newsList.querySelectorAll('.news-item').length;
+    const visibleDefault = 3;
+    const maxVisible = 10;
+
+    showMoreBtn.addEventListener('click', () => {
+      const isExpanded = newsList.classList.toggle('expanded');
+      const items = newsList.querySelectorAll('.news-item');
+      const targetCount = isExpanded ? Math.min(maxVisible, totalNews) : visibleDefault;
+      items.forEach((item, idx) => {
+        item.classList.toggle('news-hidden', idx >= targetCount);
+      });
+      newsCount.textContent = `${targetCount} / ${totalNews}건`;
+      showMoreBtn.classList.toggle('expanded', isExpanded);
+    });
+
     // 종목 검색
     const stockSearch = document.getElementById('stock-search');
     const stockList = document.getElementById('stock-list');
