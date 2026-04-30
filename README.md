@@ -1,1 +1,1 @@
-# sector-daily-brief
+# sector-issue-brief
