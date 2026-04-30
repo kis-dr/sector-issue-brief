@@ -1,0 +1,285 @@
+{
+  "slug": "shipbuilding",
+  "wics_1st": "산업재",
+  "wics_2nd": "자본재",
+  "wics_3rd": "조선",
+  "trading_date": "2026-04-30",
+  "previous_trading_date": "2026-04-29",
+  "generated_at": "2026-04-30T06:00:00",
+  "ai_summary": [
+    "카타르에너지 LNG선 2차 발주 임박, 국내 3사 수혜 기대",
+    "후판가 톤당 2만원 인상 합의로 영업이익률 0.3-0.5%p 하방",
+    "Flex LNG·Golar LNG 강세 — 글로벌 LNG 운임 상승세"
+  ],
+  "news": [
+    {
+      "id": "n01",
+      "title": "HD현대중공업, 카타르 LNG선 12척 수주 임박... 신조 슈퍼사이클 가속",
+      "summary": "카타르에너지의 2차 LNG선 발주가 4월 말 확정될 것으로 알려졌으며, 국내 조선 3사가 수주 경쟁의 우위를 점하고 있다는 분석.",
+      "url": "https://example.com/n01",
+      "source": "매일경제",
+      "published_at": "2026-04-30T09:12:00",
+      "sentiment": "positive",
+      "source_type": "news",
+      "is_new": true
+    },
+    {
+      "id": "n02",
+      "title": "중국 조선소 점유율 확대 vs 한국 고부가가치 선종 우위",
+      "summary": "Clarksons 4월 발표에 따르면 중국이 전체 발주 점유율 65%를 기록한 가운데, LNG/암모니아 추진선 등 친환경 고부가 선종은 한국이 80% 이상 점유.",
+      "url": "https://example.com/n02",
+      "source": "한국경제",
+      "published_at": "2026-04-30T08:45:00",
+      "sentiment": "neutral",
+      "source_type": "news",
+      "is_new": true
+    },
+    {
+      "id": "n03",
+      "title": "선박 후판 가격 톤당 2만원 인상 합의... 원가 부담 우려",
+      "summary": "포스코·현대제철과 조선 3사 간 2026년 상반기 후판가 협상 결과 톤당 2만원 인상으로 합의. 영업이익률 0.3~0.5%p 하락 영향 추정.",
+      "url": "https://example.com/n03",
+      "source": "조선비즈",
+      "published_at": "2026-04-30T07:30:00",
+      "sentiment": "negative",
+      "source_type": "news",
+      "is_new": true
+    },
+    {
+      "id": "n04",
+      "title": "삼성중공업, 셸과 FLNG 1기 협상 본격화",
+      "summary": "셸이 모잠비크 Rovuma LNG 프로젝트용 FLNG 1기 발주를 검토 중이며 삼성중공업이 우선협상 후보로 알려짐.",
+      "url": "https://example.com/n04",
+      "source": "서울경제",
+      "published_at": "2026-04-29T18:15:00",
+      "sentiment": "positive",
+      "source_type": "news",
+      "is_new": false
+    },
+    {
+      "id": "n05",
+      "title": "2026년 1분기 글로벌 신조 발주 14% 감소",
+      "summary": "Clarksons 집계 1Q26 글로벌 신조 발주는 전년 대비 14% 감소. 다만 LNG선·컨테이너선은 견조한 흐름 유지.",
+      "url": "https://example.com/n05",
+      "source": "아시아경제",
+      "published_at": "2026-04-29T16:50:00",
+      "sentiment": "neutral",
+      "source_type": "news",
+      "is_new": false
+    },
+    {
+      "id": "n06",
+      "title": "한화오션, 미 해군 함정 MRO 사업 본격 진출",
+      "summary": "한화오션이 미 해군 7함대 함정의 정비·수리·운영(MRO) 계약을 체결, 향후 5년간 약 1조원 매출 기대.",
+      "url": "https://example.com/n06",
+      "source": "이데일리",
+      "published_at": "2026-04-29T11:20:00",
+      "sentiment": "positive",
+      "source_type": "news",
+      "is_new": false
+    },
+    {
+      "id": "n07",
+      "title": "IMO, 2027년 탄소 부과금 도입 일정 확정",
+      "summary": "국제해사기구 MEPC 회의 결과 2027년부터 선박 톤당 탄소 부과금 도입 확정. 친환경 선박 발주 가속화 전망.",
+      "url": "https://example.com/n07",
+      "source": "머니투데이",
+      "published_at": "2026-04-28T16:00:00",
+      "sentiment": "neutral",
+      "source_type": "news",
+      "is_new": false
+    }
+  ],
+  "us_movers": [
+    {
+      "ticker": "FLEX",
+      "exchange": "NYSE",
+      "name": "Flex LNG Ltd",
+      "name_ko": "",
+      "price": 28.45,
+      "currency": "USD",
+      "change_pct": 8.4,
+      "is_52w_high": false,
+      "is_52w_low": false,
+      "reason": "LNG 운임 4주 연속 상승 + 카타르 차터링 발표 기대감"
+    },
+    {
+      "ticker": "GLNG",
+      "exchange": "NASDAQ",
+      "name": "Golar LNG Ltd",
+      "name_ko": "",
+      "price": 41.82,
+      "currency": "USD",
+      "change_pct": 6.1,
+      "is_52w_high": true,
+      "is_52w_low": false,
+      "reason": "FLNG 신규 계약 체결 보도"
+    }
+  ],
+  "stocks": [
+    {
+      "code": "329180",
+      "name": "HD현대중공업",
+      "price": 258500,
+      "change_pct": 3.4,
+      "has_chart": true,
+      "disclosures": [
+        {
+          "date": "2026-04-29",
+          "title": "카타르 LNG선 12척 수주 (잠정공시)",
+          "url": "https://example.com/d1",
+          "is_new": true
+        },
+        {
+          "date": "2026-04-28",
+          "title": "1Q26 잠정실적 (영업이익 +132% YoY)",
+          "url": "https://example.com/d2",
+          "is_new": false
+        }
+      ],
+      "reports": [
+        {
+          "broker": "NH투자증권",
+          "title": "수주 슈퍼사이클 본격화, TP 상향",
+          "url": "https://example.com/r1",
+          "date": "2026-04-30",
+          "is_new": true
+        },
+        {
+          "broker": "삼성증권",
+          "title": "LNG선 수주 모멘텀 지속",
+          "url": "https://example.com/r2",
+          "date": "2026-04-30",
+          "is_new": true
+        },
+        {
+          "broker": "미래에셋",
+          "title": "2Q26 실적 가시성 양호",
+          "url": "https://example.com/r3",
+          "date": "2026-04-29",
+          "is_new": false
+        }
+      ],
+      "consensus": {
+        "Q": [
+          {
+            "date": "2026-04-29",
+            "term": "Q",
+            "value": 4521,
+            "previous": 4280,
+            "change_pct": 5.6,
+            "is_new": true
+          },
+          {
+            "date": "2026-04-22",
+            "term": "Q",
+            "value": 4280,
+            "previous": 4150,
+            "change_pct": 3.1,
+            "is_new": false
+          }
+        ],
+        "Y": [
+          {
+            "date": "2026-04-29",
+            "term": "Y",
+            "value": 19500,
+            "previous": 18500,
+            "change_pct": 5.4,
+            "is_new": true
+          },
+          {
+            "date": "2026-04-15",
+            "term": "Y",
+            "value": 18500,
+            "previous": 18000,
+            "change_pct": 2.8,
+            "is_new": false
+          },
+          {
+            "date": "2026-03-30",
+            "term": "Y",
+            "value": 18000,
+            "previous": 17200,
+            "change_pct": 4.7,
+            "is_new": false
+          }
+        ]
+      }
+    },
+    {
+      "code": "010140",
+      "name": "삼성중공업",
+      "price": 12840,
+      "change_pct": 1.8,
+      "has_chart": true,
+      "disclosures": [
+        {
+          "date": "2026-04-29",
+          "title": "LNG 운반선 4척 수주 계약 체결",
+          "url": "https://example.com/d3",
+          "is_new": true
+        }
+      ],
+      "reports": [
+        {
+          "broker": "키움증권",
+          "title": "FLNG 협상 진전, TP 상향",
+          "url": "https://example.com/r4",
+          "date": "2026-04-30",
+          "is_new": true
+        },
+        {
+          "broker": "대신증권",
+          "title": "수주잔고 견조",
+          "url": "https://example.com/r5",
+          "date": "2026-04-28",
+          "is_new": false
+        }
+      ],
+      "consensus": {
+        "Q": [],
+        "Y": [
+          {
+            "date": "2026-04-29",
+            "term": "Y",
+            "value": 8200,
+            "previous": 8000,
+            "change_pct": 2.5,
+            "is_new": true
+          }
+        ]
+      }
+    },
+    {
+      "code": "042660",
+      "name": "한화오션",
+      "price": 82400,
+      "change_pct": -0.7,
+      "has_chart": true,
+      "disclosures": [],
+      "reports": [
+        {
+          "broker": "하나증권",
+          "title": "美 해군 MRO 모멘텀",
+          "url": "https://example.com/r6",
+          "date": "2026-04-29",
+          "is_new": false
+        }
+      ],
+      "consensus": {
+        "Q": [],
+        "Y": [
+          {
+            "date": "2026-04-25",
+            "term": "Y",
+            "value": 12800,
+            "previous": 12500,
+            "change_pct": 2.4,
+            "is_new": false
+          }
+        ]
+      }
+    }
+  ]
+}

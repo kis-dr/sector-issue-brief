@@ -1,0 +1,12 @@
+{
+  "산업재-자본재-조선": "shipbuilding",
+  "산업재-자본재-건설": "construction",
+  "산업재-자본재-건축자재": "building-materials",
+  "산업재-자본재-가구": "furniture",
+  "산업재-자본재-기계": "machinery",
+  "금융-부동산-부동산": "real-estate",
+  "건강관리-건강관리장비와서비스-건강관리장비와용품": "healthcare-equipment",
+  "경기관련소비재-내구소비재와의류-화장품": "cosmetics",
+  "경기관련소비재-소매(유통)-백화점과일반상점": "department-stores",
+  "IT-반도체와반도체장비-반도체와반도체장비": "semiconductors"
+}
