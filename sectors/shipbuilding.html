@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>조선 - 섹터별 이슈 브리핑</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="stylesheet" href="../assets/style.css?v=2">
 </head>
 <body>
   <header class="site-header">
@@ -41,8 +41,9 @@
     <!-- 섹터 요약 (Gemini 생성) -->
     <section class="summary-box">
       <div class="summary-label">
-        <span class="summary-tag">AI 요약</span>
-        <span class="summary-time">생성: 06:00</span>
+        <span class="summary-tag">AI</span>
+        <span class="summary-title">오늘의 섹터 요약</span>
+        <span class="summary-time">06:00 생성</span>
       </div>
       <ul class="summary-list">
         <li>카타르에너지 2차 LNG선 발주 임박, 국내 조선 3사 수혜 기대</li>
@@ -328,24 +329,47 @@
   </footer>
 
   <script>
+    // ============================================
     // 섹터 핵심이슈 더보기 토글
-    const showMoreBtn = document.getElementById('show-more-news');
-    const newsList = document.getElementById('news-list');
-    const newsCount = document.getElementById('news-count');
-    const totalNews = newsList.querySelectorAll('.news-item').length;
-    const visibleDefault = 3;
-    const maxVisible = 10;
+    // ============================================
+    (function initNewsToggle() {
+      const newsList = document.getElementById('news-list');
+      const showMoreBtn = document.getElementById('show-more-news');
+      const newsCount = document.getElementById('news-count');
+      if (!newsList || !showMoreBtn) return;
 
-    showMoreBtn.addEventListener('click', () => {
-      const isExpanded = newsList.classList.toggle('expanded');
-      const items = newsList.querySelectorAll('.news-item');
-      const targetCount = isExpanded ? Math.min(maxVisible, totalNews) : visibleDefault;
-      items.forEach((item, idx) => {
-        item.classList.toggle('news-hidden', idx >= targetCount);
+      const items = Array.from(newsList.querySelectorAll('.news-item'));
+      const total = items.length;
+      const VISIBLE_DEFAULT = 3;
+      const VISIBLE_MAX = 10;
+      let expanded = false;
+
+      function applyState() {
+        const target = expanded ? Math.min(VISIBLE_MAX, total) : VISIBLE_DEFAULT;
+        items.forEach((item, idx) => {
+          if (idx < target) {
+            item.style.display = '';
+            item.classList.remove('news-hidden');
+          } else {
+            item.style.display = 'none';
+            item.classList.add('news-hidden');
+          }
+        });
+        if (newsCount) newsCount.textContent = `${target} / ${total}건`;
+        showMoreBtn.classList.toggle('expanded', expanded);
+        const remain = Math.min(VISIBLE_MAX, total) - VISIBLE_DEFAULT;
+        const moreText = showMoreBtn.querySelector('.show-more-text');
+        if (moreText) moreText.textContent = `더보기 (${remain}건 더)`;
+      }
+
+      // 페이지 로드 즉시 디폴트 3개로 강제
+      applyState();
+
+      showMoreBtn.addEventListener('click', () => {
+        expanded = !expanded;
+        applyState();
       });
-      newsCount.textContent = `${targetCount} / ${totalNews}건`;
-      showMoreBtn.classList.toggle('expanded', isExpanded);
-    });
+    })();
 
     // 종목 검색
     const stockSearch = document.getElementById('stock-search');
