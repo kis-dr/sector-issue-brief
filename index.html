@@ -1,11 +1,186 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>테스트 페이지</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>섹터별 이슈 브리핑</title>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-  <h1>GitHub Pages 테스트</h1>
-  <p>잘 되고 있어요!</p>
+  <header class="site-header">
+    <div class="container">
+      <div class="brand">
+        <span class="brand-mark">KIS</span>
+        <span class="brand-divider"></span>
+        <span class="brand-name">섹터별 이슈 브리핑</span>
+      </div>
+      <div class="meta">
+        <span class="date" id="today-date">2026.04.30</span>
+        <span class="meta-divider">·</span>
+        <span class="dept">디지털리서치팀</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="container main-content">
+    <section class="hero">
+      <h1 class="hero-title">오늘의 섹터 이슈</h1>
+      <p class="hero-sub">담당 섹터를 선택하여 상세 브리핑을 확인하세요.</p>
+      <div class="search-bar">
+        <input type="text" id="sector-search" placeholder="섹터명 검색 (예: 반도체, 조선, 화장품...)">
+      </div>
+    </section>
+
+    <section class="sector-groups" id="sector-groups">
+      <!-- 1st level group: 산업재 -->
+      <div class="group">
+        <div class="group-header">
+          <h2 class="group-title">산업재</h2>
+          <span class="group-count">4</span>
+        </div>
+        <div class="card-grid">
+          <a href="sectors/shipbuilding.html" class="card" data-name="조선 산업재 자본재 shipbuilding">
+            <div class="card-path">자본재</div>
+            <div class="card-name">조선</div>
+            <div class="card-stats">
+              <span class="stat">이슈 <strong>3</strong></span>
+              <span class="stat">종목 <strong>5</strong></span>
+            </div>
+          </a>
+          <a href="sectors/construction.html" class="card" data-name="건설 산업재 자본재 construction">
+            <div class="card-path">자본재</div>
+            <div class="card-name">건설</div>
+            <div class="card-stats">
+              <span class="stat">이슈 <strong>2</strong></span>
+              <span class="stat">종목 <strong>8</strong></span>
+            </div>
+          </a>
+          <a href="sectors/building-materials.html" class="card" data-name="건축자재 산업재 자본재 building-materials">
+            <div class="card-path">자본재</div>
+            <div class="card-name">건축자재</div>
+            <div class="card-stats">
+              <span class="stat">이슈 <strong>1</strong></span>
+              <span class="stat">종목 <strong>4</strong></span>
+            </div>
+          </a>
+          <a href="sectors/furniture.html" class="card" data-name="가구 산업재 자본재 furniture">
+            <div class="card-path">자본재</div>
+            <div class="card-name">가구</div>
+            <div class="card-stats">
+              <span class="stat">이슈 <strong>1</strong></span>
+              <span class="stat">종목 <strong>3</strong></span>
+            </div>
+          </a>
+          <a href="sectors/machinery.html" class="card" data-name="기계 산업재 자본재 machinery">
+            <div class="card-path">자본재</div>
+            <div class="card-name">기계</div>
+            <div class="card-stats">
+              <span class="stat">이슈 <strong>2</strong></span>
+              <span class="stat">종목 <strong>6</strong></span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- 1st level group: 금융 -->
+      <div class="group">
+        <div class="group-header">
+          <h2 class="group-title">금융</h2>
+          <span class="group-count">1</span>
+        </div>
+        <div class="card-grid">
+          <a href="sectors/real-estate.html" class="card" data-name="부동산 금융 real-estate">
+            <div class="card-path">부동산</div>
+            <div class="card-name">부동산</div>
+            <div class="card-stats">
+              <span class="stat">이슈 <strong>2</strong></span>
+              <span class="stat">종목 <strong>7</strong></span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- 1st level group: 경기관련소비재 -->
+      <div class="group">
+        <div class="group-header">
+          <h2 class="group-title">경기관련소비재</h2>
+          <span class="group-count">2</span>
+        </div>
+        <div class="card-grid">
+          <a href="sectors/cosmetics.html" class="card" data-name="화장품 경기관련소비재 내구소비재와의류 cosmetics">
+            <div class="card-path">내구소비재와의류</div>
+            <div class="card-name">화장품</div>
+            <div class="card-stats">
+              <span class="stat">이슈 <strong>4</strong></span>
+              <span class="stat">종목 <strong>9</strong></span>
+            </div>
+          </a>
+          <a href="sectors/department-stores.html" class="card" data-name="백화점과일반상점 경기관련소비재 소매(유통) department-stores">
+            <div class="card-path">소매(유통)</div>
+            <div class="card-name">백화점과일반상점</div>
+            <div class="card-stats">
+              <span class="stat">이슈 <strong>1</strong></span>
+              <span class="stat">종목 <strong>5</strong></span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- 1st level group: 건강관리 -->
+      <div class="group">
+        <div class="group-header">
+          <h2 class="group-title">건강관리</h2>
+          <span class="group-count">1</span>
+        </div>
+        <div class="card-grid">
+          <a href="sectors/healthcare-equipment.html" class="card" data-name="건강관리장비와용품 건강관리 건강관리장비와서비스 healthcare-equipment">
+            <div class="card-path">건강관리장비와서비스</div>
+            <div class="card-name">건강관리장비와용품</div>
+            <div class="card-stats">
+              <span class="stat">이슈 <strong>2</strong></span>
+              <span class="stat">종목 <strong>4</strong></span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 한국투자증권 자산관리전략부 디지털리서치팀</span>
+      <span class="footer-divider">·</span>
+      <span>내부용 / Internal Use Only</span>
+    </div>
+  </footer>
+
+  <script>
+    // 검색 필터
+    const search = document.getElementById('sector-search');
+    const cards = document.querySelectorAll('.card');
+    const groups = document.querySelectorAll('.group');
+
+    search.addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      cards.forEach(card => {
+        const match = card.dataset.name.toLowerCase().includes(q);
+        card.style.display = match ? '' : 'none';
+      });
+      // 그룹 안 카드가 모두 숨겨지면 그룹도 숨김
+      groups.forEach(group => {
+        const visible = [...group.querySelectorAll('.card')].some(c => c.style.display !== 'none');
+        group.style.display = visible ? '' : 'none';
+      });
+    });
+
+    // 오늘 날짜 표시
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const dd = String(today.getDate()).padStart(2,'0');
+    document.getElementById('today-date').textContent = `${yyyy}.${mm}.${dd}`;
+  </script>
 </body>
 </html>

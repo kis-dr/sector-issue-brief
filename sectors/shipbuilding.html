@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>조선 - 섹터별 이슈 브리핑</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="brand">
+        <a href="../index.html" class="brand-mark-link">
+          <span class="brand-mark">KIS</span>
+        </a>
+        <span class="brand-divider"></span>
+        <span class="brand-name">섹터별 이슈 브리핑</span>
+      </div>
+      <div class="meta">
+        <span class="date" id="today-date">2026.04.30</span>
+        <span class="meta-divider">·</span>
+        <a href="../index.html" class="back-link">← 전체 섹터</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container sector-page">
+    <nav class="breadcrumb">
+      <a href="../index.html">전체</a>
+      <span class="bc-sep">›</span>
+      <span>산업재</span>
+      <span class="bc-sep">›</span>
+      <span>자본재</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-current">조선</span>
+    </nav>
+
+    <h1 class="sector-title">조선</h1>
+    <p class="sector-analyst">담당 애널리스트 · 홍길동</p>
+
+    <!-- 섹터 핵심 이슈 -->
+    <section class="block">
+      <div class="block-header">
+        <h2 class="block-title">섹터 핵심 이슈</h2>
+        <span class="block-count">3건</span>
+      </div>
+      <ul class="news-list">
+        <li class="news-item">
+          <div class="news-meta">
+            <span class="tag tag-positive">긍정</span>
+            <span class="news-date">2026.04.30 09:12</span>
+            <span class="news-source">매일경제</span>
+          </div>
+          <a href="#" class="news-title">HD현대중공업, 카타르 LNG선 12척 수주 임박... 신조 슈퍼사이클 가속</a>
+          <p class="news-summary">카타르에너지의 2차 LNG선 발주가 4월 말 확정될 것으로 알려졌으며, 국내 조선 3사가 수주 경쟁의 우위를 점하고 있다는 분석.</p>
+        </li>
+        <li class="news-item">
+          <div class="news-meta">
+            <span class="tag tag-neutral">중립</span>
+            <span class="news-date">2026.04.30 08:45</span>
+            <span class="news-source">한국경제</span>
+          </div>
+          <a href="#" class="news-title">중국 조선소 점유율 확대 vs 한국 고부가가치 선종 우위</a>
+          <p class="news-summary">Clarksons 4월 발표에 따르면 중국이 전체 발주 점유율 65%를 기록한 가운데, LNG/암모니아 추진선 등 친환경 고부가 선종은 한국이 80% 이상 점유.</p>
+        </li>
+        <li class="news-item">
+          <div class="news-meta">
+            <span class="tag tag-negative">부정</span>
+            <span class="news-date">2026.04.30 07:30</span>
+            <span class="news-source">조선비즈</span>
+          </div>
+          <a href="#" class="news-title">선박 후판 가격 톤당 2만원 인상 합의... 원가 부담 우려</a>
+          <p class="news-summary">포스코·현대제철과 조선 3사 간 2026년 상반기 후판가 협상 결과 톤당 2만원 인상으로 합의. 영업이익률 0.3~0.5%p 하락 영향 추정.</p>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 미국 시장 동향 -->
+    <section class="block">
+      <div class="block-header">
+        <h2 class="block-title">미국 시장 동향 (관련)</h2>
+        <span class="block-count">2건</span>
+      </div>
+      <ul class="us-movers-list">
+        <li class="us-mover">
+          <div class="us-mover-head">
+            <span class="ticker">FLEX-US</span>
+            <span class="us-name">Flex LNG Ltd</span>
+            <span class="change change-up">+8.4%</span>
+          </div>
+          <p class="us-reason">LNG 운임 지표 BLPG1 4주 연속 상승 + 카타르 차터링 발표 기대감</p>
+        </li>
+        <li class="us-mover">
+          <div class="us-mover-head">
+            <span class="ticker">GLNG-US</span>
+            <span class="us-name">Golar LNG Ltd</span>
+            <span class="change change-up">+6.1%</span>
+            <span class="badge badge-high">52주 최고</span>
+          </div>
+          <p class="us-reason">FLNG(부유식 LNG 생산설비) 신규 계약 체결 보도</p>
+        </li>
+      </ul>
+    </section>
+
+    <!-- 종목별 상세 -->
+    <section class="block">
+      <div class="block-header">
+        <h2 class="block-title">종목별 상세</h2>
+        <div class="block-controls">
+          <input type="text" class="block-search" id="stock-search" placeholder="종목 검색...">
+          <select class="block-sort" id="stock-sort">
+            <option value="default">기본 정렬</option>
+            <option value="name">종목명순</option>
+            <option value="disclosure">공시 많은순</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="stock-list" id="stock-list">
+        <details class="stock-card" data-name="HD현대중공업 329180" data-disclosure="2">
+          <summary class="stock-summary">
+            <div class="stock-head">
+              <span class="stock-code">329180</span>
+              <span class="stock-name">HD현대중공업</span>
+            </div>
+            <div class="stock-counts">
+              <span class="badge">공시 2</span>
+              <span class="badge">컨센 1</span>
+              <span class="badge">리포트 3</span>
+            </div>
+          </summary>
+          <div class="stock-detail">
+            <div class="detail-row">
+              <h4 class="detail-label">📈 가격 차트</h4>
+              <div class="chart-tabs">
+                <button class="chart-tab active">1M</button>
+                <button class="chart-tab">3M</button>
+                <button class="chart-tab">1Y</button>
+                <button class="chart-tab">YoY</button>
+              </div>
+              <div class="chart-placeholder">[ yfinance 가격 차트 영역 ]</div>
+            </div>
+            <div class="detail-row">
+              <h4 class="detail-label">📄 공시</h4>
+              <ul class="detail-list">
+                <li>2026.04.29 · 카타르 LNG선 12척 수주 (잠정)</li>
+                <li>2026.04.28 · 1Q26 잠정실적 발표 (영업이익 +132% YoY)</li>
+              </ul>
+            </div>
+            <div class="detail-row">
+              <h4 class="detail-label">💹 컨센서스 변화</h4>
+              <ul class="detail-list">
+                <li>26F 영업이익 컨센서스 +5.2% 상향 (1.85조 → 1.95조)</li>
+              </ul>
+            </div>
+            <div class="detail-row">
+              <h4 class="detail-label">📑 타사 리포트</h4>
+              <ul class="detail-list">
+                <li>NH투자증권 · 매수 · TP 280,000 (▲25,000)</li>
+                <li>삼성증권 · 매수 · TP 295,000 (▲30,000)</li>
+                <li>미래에셋 · 매수 · TP 270,000 (유지)</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+
+        <details class="stock-card" data-name="삼성중공업 010140" data-disclosure="1">
+          <summary class="stock-summary">
+            <div class="stock-head">
+              <span class="stock-code">010140</span>
+              <span class="stock-name">삼성중공업</span>
+            </div>
+            <div class="stock-counts">
+              <span class="badge">공시 1</span>
+              <span class="badge">컨센 0</span>
+              <span class="badge">리포트 2</span>
+            </div>
+          </summary>
+          <div class="stock-detail">
+            <div class="detail-row">
+              <h4 class="detail-label">📈 가격 차트</h4>
+              <div class="chart-tabs">
+                <button class="chart-tab active">1M</button>
+                <button class="chart-tab">3M</button>
+                <button class="chart-tab">1Y</button>
+                <button class="chart-tab">YoY</button>
+              </div>
+              <div class="chart-placeholder">[ yfinance 가격 차트 영역 ]</div>
+            </div>
+            <div class="detail-row">
+              <h4 class="detail-label">📄 공시</h4>
+              <ul class="detail-list">
+                <li>2026.04.29 · LNG 운반선 4척 수주 계약 체결</li>
+              </ul>
+            </div>
+            <div class="detail-row">
+              <h4 class="detail-label">📑 타사 리포트</h4>
+              <ul class="detail-list">
+                <li>키움증권 · 매수 · TP 14,500 (▲1,500)</li>
+                <li>대신증권 · 매수 · TP 13,800 (유지)</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+
+        <details class="stock-card" data-name="한화오션 042660" data-disclosure="0">
+          <summary class="stock-summary">
+            <div class="stock-head">
+              <span class="stock-code">042660</span>
+              <span class="stock-name">한화오션</span>
+            </div>
+            <div class="stock-counts">
+              <span class="badge">공시 0</span>
+              <span class="badge">컨센 1</span>
+              <span class="badge">리포트 1</span>
+            </div>
+          </summary>
+          <div class="stock-detail">
+            <div class="detail-row">
+              <h4 class="detail-label">📈 가격 차트</h4>
+              <div class="chart-tabs">
+                <button class="chart-tab active">1M</button>
+                <button class="chart-tab">3M</button>
+                <button class="chart-tab">1Y</button>
+                <button class="chart-tab">YoY</button>
+              </div>
+              <div class="chart-placeholder">[ yfinance 가격 차트 영역 ]</div>
+            </div>
+            <div class="detail-row">
+              <h4 class="detail-label">💹 컨센서스 변화</h4>
+              <ul class="detail-list">
+                <li>26F 매출 컨센서스 +2.1% 상향 (12.5조 → 12.8조)</li>
+              </ul>
+            </div>
+            <div class="detail-row">
+              <h4 class="detail-label">📑 타사 리포트</h4>
+              <ul class="detail-list">
+                <li>하나증권 · 매수 · TP 95,000 (▲5,000)</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 한국투자증권 자산관리전략부 디지털리서치팀</span>
+      <span class="footer-divider">·</span>
+      <span>내부용 / Internal Use Only</span>
+    </div>
+  </footer>
+
+  <script>
+    // 종목 검색
+    const stockSearch = document.getElementById('stock-search');
+    const stockList = document.getElementById('stock-list');
+    const stockCards = stockList.querySelectorAll('.stock-card');
+
+    stockSearch.addEventListener('input', (e) => {
+      const q = e.target.value.trim().toLowerCase();
+      stockCards.forEach(card => {
+        const match = card.dataset.name.toLowerCase().includes(q);
+        card.style.display = match ? '' : 'none';
+      });
+    });
+
+    // 종목 정렬
+    const stockSort = document.getElementById('stock-sort');
+    stockSort.addEventListener('change', (e) => {
+      const v = e.target.value;
+      const arr = [...stockCards];
+      if (v === 'name') {
+        arr.sort((a,b) => a.dataset.name.localeCompare(b.dataset.name, 'ko'));
+      } else if (v === 'disclosure') {
+        arr.sort((a,b) => parseInt(b.dataset.disclosure) - parseInt(a.dataset.disclosure));
+      }
+      arr.forEach(c => stockList.appendChild(c));
+    });
+
+    // 차트 탭
+    document.querySelectorAll('.chart-tabs').forEach(tabs => {
+      tabs.querySelectorAll('.chart-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          tabs.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+        });
+      });
+    });
+
+    // 오늘 날짜
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const dd = String(today.getDate()).padStart(2,'0');
+    document.getElementById('today-date').textContent = `${yyyy}.${mm}.${dd}`;
+  </script>
+</body>
+</html>
