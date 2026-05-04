@@ -780,12 +780,55 @@ ul { list-style: none; padding: 0; margin: 0; }
   padding: 4px 0 !important;
 }
 
+/* Consensus 2-column 그리드 */
+.cons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.cons-side {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+.cons-side-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--line);
+}
+.cons-empty {
+  background: transparent;
+  border: 1px dashed var(--line);
+  color: var(--ink-3);
+  font-size: 12px;
+  text-align: center;
+  padding: 20px;
+}
+
 /* Consensus 라인 */
+.cons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 .cons-list li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-family: var(--font-mono);
   font-size: 12px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+  background: transparent !important;
+  border: none !important;
 }
-.cons-term {
+.cons-period {
   background: var(--bg);
   border: 1px solid var(--line);
   padding: 1px 6px;
@@ -794,6 +837,7 @@ ul { list-style: none; padding: 0; margin: 0; }
   color: var(--ink-2);
   font-weight: 600;
   flex-shrink: 0;
+  font-family: var(--font-sans);
 }
 .cons-arrow {
   color: var(--ink);
@@ -804,6 +848,123 @@ ul { list-style: none; padding: 0; margin: 0; }
   padding: 1px 6px;
   border-radius: 3px;
   font-size: 11px;
+}
+
+/* Report (펼치기) */
+.report-item {
+  display: block !important;
+  background: var(--bg-card) !important;
+  border: 1px solid var(--line) !important;
+  padding: 10px 12px !important;
+  border-radius: var(--radius-sm) !important;
+}
+.report-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.report-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.1s;
+}
+a.report-title:hover { border-color: var(--ink); }
+.report-toggle {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.report-toggle:hover { border-color: var(--ink); color: var(--ink); }
+.report-detail {
+  display: none;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.report-item.expanded .report-detail { display: block; }
+.report-keypoints {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.report-keypoints li {
+  display: list-item !important;
+  list-style: none !important;
+  font-size: 12px;
+  color: var(--ink);
+  padding: 0 0 0 14px !important;
+  position: relative;
+  background: transparent !important;
+  border: none !important;
+  font-family: var(--font-sans) !important;
+}
+.report-keypoints li::before {
+  content: '◆';
+  position: absolute;
+  left: 0;
+  color: var(--ink-3);
+  font-size: 9px;
+  top: 4px;
+}
+.report-summary {
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+/* 종목별 뉴스 (펼침 안에서) */
+.stock-news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.stock-news-item {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--line) !important;
+  padding: 10px 12px !important;
+  border-radius: var(--radius-sm) !important;
+  display: block !important;
+  font-family: var(--font-sans) !important;
+}
+.stock-news-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+.stock-news-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+a.stock-news-title:hover { text-decoration: underline; }
+.stock-news-summary {
+  font-size: 12px;
+  color: var(--ink-2);
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Mobile - consensus 1-column 스택 */
+@media (max-width: 640px) {
+  .cons-grid { grid-template-columns: 1fr; }
 }
 
 /* Chart wrap */

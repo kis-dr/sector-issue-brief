@@ -1,0 +1,60 @@
+{
+  "slug": "machinery",
+  "wics_1st": "산업재",
+  "wics_2nd": "자본재",
+  "wics_3rd": "기계",
+  "trading_date": "2026-04-30",
+  "previous_trading_date": "2026-04-29",
+  "generated_at": "2026-04-30T06:00:00",
+  "ai_summary": [
+    "두산에너빌리티 SMR 수주 본격화, 미국 NuScale 협력 확대",
+    "현대로템 폴란드 K2 2차 계약 협상 가속"
+  ],
+  "news": [
+    {
+      "id": "m01",
+      "title": "두산에너빌리티, SMR 시장 본격 진입... NuScale 7기 수주",
+      "summary": "미국 NuScale Power와 SMR 모듈 7기 공급 계약 체결, 약 1조원 규모.",
+      "url": "https://example.com/m01",
+      "source": "조선일보",
+      "published_at": "2026-04-30T09:00:00",
+      "sentiment": "positive",
+      "source_type": "news",
+      "is_new": true
+    }
+  ],
+  "us_movers": [],
+  "stocks": [
+    {
+      "code": "034020",
+      "name": "두산에너빌리티",
+      "price": 23400,
+      "change_pct": 5.6,
+      "has_chart": false,
+      "news": [
+        {
+          "id": "dn01",
+          "title": "두산에너빌리티 NuScale SMR 7기 공급 계약 체결",
+          "summary": "약 1조원 규모. 2028년부터 순차 납품.",
+          "url": "https://example.com/dn01",
+          "published_at": "2026-04-29T16:30:00",
+          "sentiment": "positive",
+          "is_new": true
+        }
+      ],
+      "disclosures": [
+        {
+          "date": "2026-04-29",
+          "title": "NuScale Power와 SMR 모듈 공급계약 체결",
+          "url": "",
+          "is_new": true
+        }
+      ],
+      "reports": [],
+      "consensus": {
+        "Q": [],
+        "Y": []
+      }
+    }
+  ]
+}

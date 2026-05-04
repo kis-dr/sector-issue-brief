@@ -1,0 +1,132 @@
+{
+  "slug": "cosmetics",
+  "wics_1st": "경기관련소비재",
+  "wics_2nd": "내구소비재와의류",
+  "wics_3rd": "화장품",
+  "trading_date": "2026-04-30",
+  "previous_trading_date": "2026-04-29",
+  "generated_at": "2026-04-30T06:00:00",
+  "ai_summary": [
+    "Q1 면세점 매출 +18% YoY, 따이공 매출 회복세",
+    "아모레퍼시픽 북미 주력 브랜드 라네즈 매출 +35% 호조",
+    "Estée Lauder 가이던스 하향에도 K-뷰티는 차별화"
+  ],
+  "news": [
+    {
+      "id": "c01",
+      "title": "면세점 4월 매출 +18% YoY, 따이공 회복 본격화",
+      "summary": "한국면세점협회 집계 4월 외국인 매출 1.42조원 (+18% YoY). 단체 비중 확대로 객단가 상승.",
+      "url": "https://example.com/c01",
+      "source": "한국경제",
+      "published_at": "2026-04-30T08:30:00",
+      "sentiment": "positive",
+      "source_type": "news",
+      "is_new": true
+    },
+    {
+      "id": "c02",
+      "title": "Estée Lauder, 2026 가이던스 하향... K-뷰티는 차별화",
+      "summary": "에스티로더 분기 실적 부진으로 가이던스 하향. 반면 한국 화장품 ODM/OEM 업체는 북미 매출 성장 지속.",
+      "url": "https://example.com/c02",
+      "source": "매일경제",
+      "published_at": "2026-04-30T07:15:00",
+      "sentiment": "neutral",
+      "source_type": "news",
+      "is_new": true
+    }
+  ],
+  "us_movers": [
+    {
+      "ticker": "EL",
+      "exchange": "NYSE",
+      "name": "Estee Lauder Cos Inc",
+      "name_ko": "",
+      "price": 68.4,
+      "currency": "USD",
+      "change_pct": -7.2,
+      "is_52w_high": false,
+      "is_52w_low": true,
+      "reason": "FY26 가이던스 하향 + 중국 수요 둔화 우려"
+    }
+  ],
+  "stocks": [
+    {
+      "code": "090430",
+      "name": "아모레퍼시픽",
+      "price": 162500,
+      "change_pct": 2.1,
+      "has_chart": false,
+      "news": [
+        {
+          "id": "ap01",
+          "title": "아모레퍼시픽 1Q26 라네즈 북미 매출 +35%",
+          "summary": "라네즈 1Q26 북미 매출 +35% YoY. Sephora 매장 확대 효과.",
+          "url": "https://example.com/ap01",
+          "published_at": "2026-04-29T14:00:00",
+          "sentiment": "positive",
+          "is_new": true
+        }
+      ],
+      "disclosures": [
+        {
+          "date": "2026-04-29",
+          "title": "1Q26 잠정실적 발표",
+          "url": "",
+          "is_new": true
+        }
+      ],
+      "reports": [
+        {
+          "broker": "NH투자증권",
+          "title": "북미 모멘텀 본격화, TP 상향",
+          "url": "https://example.com/c-r1",
+          "date": "2026-04-30",
+          "is_new": true,
+          "summary": "라네즈/이니스프리 북미 매출 비중 확대로 마진 개선. 면세 회복도 긍정적.",
+          "key_points": [
+            "북미 매출 비중 22% (2025) → 28% (2026E)",
+            "TP 175,000원 → 195,000원"
+          ]
+        }
+      ],
+      "consensus": {
+        "Q": [
+          {
+            "date": "2026-04-29",
+            "term": "Q",
+            "period": "2026년 2분기",
+            "value": 1850,
+            "previous": 1750,
+            "change_pct": 5.7,
+            "is_new": true
+          }
+        ],
+        "Y": [
+          {
+            "date": "2026-04-29",
+            "term": "Y",
+            "period": "2026년",
+            "value": 7200,
+            "previous": 6900,
+            "change_pct": 4.3,
+            "is_new": true
+          }
+        ]
+      }
+    },
+    {
+      "code": "051900",
+      "name": "LG생활건강",
+      "price": 318000,
+      "change_pct": -1.2,
+      "has_chart": false,
+      "news": [],
+      "disclosures": [],
+      "reports": [],
+      "consensus": {
+        "Q": [],
+        "Y": []
+      }
+    }
+  ]
+}

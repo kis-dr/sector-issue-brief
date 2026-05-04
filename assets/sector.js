@@ -156,22 +156,52 @@
   }
   function reportItems(arr) {
     if (!arr || arr.length === 0) return '<li class="empty-line">데이터 없음</li>';
-    return arr.map(r => `
-      <li>
-        ${r.is_new ? '<span class="new-dot"></span>' : ''}
-        <span class="line-date">${fmtDate(r.date)}</span>
-        <span class="line-broker">${$h(r.broker)}</span>
-        ${r.url ? `<a href="${$h(r.url)}" target="_blank" rel="noopener">${$h(r.title)}</a>` : `<span>${$h(r.title)}</span>`}
+    return arr.map(r => {
+      const hasDetail = (r.summary && r.summary.trim()) || (r.key_points && r.key_points.length);
+      const keyPointsHtml = (r.key_points && r.key_points.length)
+        ? `<ul class="report-keypoints">${r.key_points.map(k => `<li>${$h(k)}</li>`).join('')}</ul>`
+        : '';
+      const summaryHtml = r.summary
+        ? `<div class="report-summary">${$h(r.summary)}</div>`
+        : '';
+      const detailBlock = hasDetail
+        ? `<div class="report-detail">${keyPointsHtml}${summaryHtml}</div>`
+        : '';
+
+      return `
+        <li class="report-item">
+          <div class="report-head">
+            ${r.is_new ? '<span class="new-dot"></span>' : ''}
+            <span class="line-date">${fmtDate(r.date)}</span>
+            <span class="line-broker">${$h(r.broker)}</span>
+            ${r.url ? `<a href="${$h(r.url)}" target="_blank" rel="noopener" class="report-title">${$h(r.title)}</a>` : `<span class="report-title">${$h(r.title)}</span>`}
+            ${hasDetail ? '<button class="report-toggle" type="button" aria-label="펼치기">▾</button>' : ''}
+          </div>
+          ${detailBlock}
+        </li>
+      `;
+    }).join('');
+  }
+
+  // 종목별 뉴스 (stock.news) — 펼쳐진 종목 카드 안에서 표시
+  function stockNewsItems(arr) {
+    if (!arr || arr.length === 0) return '<li class="empty-line">데이터 없음</li>';
+    return arr.map(n => `
+      <li class="stock-news-item">
+        <div class="stock-news-meta">
+          ${sentimentTag(n.sentiment)}
+          <span class="line-date">${fmtDate(n.published_at)} ${fmtTime(n.published_at)}</span>
+        </div>
+        ${n.url ? `<a href="${$h(n.url)}" target="_blank" rel="noopener" class="stock-news-title">${$h(n.title)}</a>` : `<span class="stock-news-title">${$h(n.title)}</span>`}
+        ${n.summary ? `<p class="stock-news-summary">${$h(n.summary)}</p>` : ''}
       </li>
     `).join('');
   }
-  function consensusItems(arrQ, arrY) {
-    const both = [];
-    (arrY || []).forEach(c => both.push({...c, _term: 'Y'}));
-    (arrQ || []).forEach(c => both.push({...c, _term: 'Q'}));
-    if (both.length === 0) return '<li class="empty-line">데이터 없음</li>';
-
-    const html = both.map(c => {
+  function consensusOneSide(arr, term) {
+    if (!arr || arr.length === 0) {
+      return `<div class="cons-side cons-empty">${term === 'Y' ? '연간' : '분기'} 컨센서스 변화 없음</div>`;
+    }
+    const items = arr.map(c => {
       const arrow = c.previous != null && c.value != null
         ? `<span class="cons-arrow">${fmtNumber(c.previous)} → ${fmtNumber(c.value)}</span>`
         : c.value != null ? `<span class="cons-arrow">${fmtNumber(c.value)}</span>` : '';
@@ -182,12 +212,25 @@
         <li>
           ${c.is_new ? '<span class="new-dot"></span>' : ''}
           <span class="line-date">${fmtDate(c.date)}</span>
-          <span class="cons-term">${c._term === 'Y' ? '연간' : '분기'}</span>
+          ${c.period ? `<span class="cons-period">${$h(c.period)}</span>` : ''}
           ${arrow} ${pct}
         </li>
       `;
     }).join('');
-    return html;
+    return `
+      <div class="cons-side">
+        <div class="cons-side-label">${term === 'Y' ? '연간' : '분기'}</div>
+        <ul class="cons-list">${items}</ul>
+      </div>
+    `;
+  }
+  function consensusBlock(arrQ, arrY) {
+    return `
+      <div class="cons-grid">
+        ${consensusOneSide(arrQ, 'Q')}
+        ${consensusOneSide(arrY, 'Y')}
+      </div>
+    `;
   }
 
   function renderStock(s, idx) {
@@ -199,6 +242,7 @@
       : `<div class="stock-price"><span class="price-num">-</span></div>`;
 
     const counts = [
+      `뉴스 ${(s.news || []).length}`,
       `공시 ${(s.disclosures || []).length}`,
       `컨센 ${((s.consensus?.Q || []).length + (s.consensus?.Y || []).length)}`,
       `리포트 ${(s.reports || []).length}`,
@@ -234,13 +278,19 @@
               </div>
             </div>
           ` : ''}
+          ${(s.news && s.news.length > 0) ? `
+            <div class="detail-row">
+              <h4 class="detail-label">📰 종목 뉴스 (어제자, 핵심 ${s.news.length}건)</h4>
+              <ul class="stock-news-list">${stockNewsItems(s.news)}</ul>
+            </div>
+          ` : ''}
           <div class="detail-row">
             <h4 class="detail-label">📄 공시 (7일)</h4>
             <ul class="detail-list">${disclosureItems(s.disclosures)}</ul>
           </div>
           <div class="detail-row">
             <h4 class="detail-label">💹 컨센서스 변화 (최근 5건)</h4>
-            <ul class="detail-list cons-list">${consensusItems(s.consensus?.Q, s.consensus?.Y)}</ul>
+            ${consensusBlock(s.consensus?.Q, s.consensus?.Y)}
           </div>
           <div class="detail-row">
             <h4 class="detail-label">📑 타사 리포트 (7일)</h4>
@@ -310,6 +360,22 @@
     bindNewsToggle(data);
     bindStockSearchSort();
     bindChartLazy();
+    bindReportToggles();
+  }
+
+  // ─────────────────────────────────────────────
+  // 리포트 펼치기/접기
+  // ─────────────────────────────────────────────
+  function bindReportToggles() {
+    document.querySelectorAll('.report-item').forEach(li => {
+      const btn = li.querySelector('.report-toggle');
+      if (!btn) return;
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const expanded = li.classList.toggle('expanded');
+        btn.textContent = expanded ? '▴' : '▾';
+      });
+    });
   }
 
   // ─────────────────────────────────────────────

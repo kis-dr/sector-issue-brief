@@ -123,6 +123,26 @@
       "price": 258500,
       "change_pct": 3.4,
       "has_chart": true,
+      "news": [
+        {
+          "id": "sn01",
+          "title": "HD현대중공업, 카타르 LNG선 12척 단독 수주 우선협상자 선정",
+          "summary": "카타르에너지가 발주한 2차 LNG선 12척 중 6척의 우선협상대상자로 HD현대중공업이 선정. 척당 약 2,800억원, 총 1.7조원 규모.",
+          "url": "https://example.com/sn01",
+          "published_at": "2026-04-29T17:30:00",
+          "sentiment": "positive",
+          "is_new": true
+        },
+        {
+          "id": "sn02",
+          "title": "HD현대중공업 1Q26 어닝 서프라이즈, 영업이익 132% YoY",
+          "summary": "1Q26 영업이익 4,521억원 (컨센서스 3,800억원 대비 +19% 상회). 매출 6.2조원 (+18% YoY).",
+          "url": "https://example.com/sn02",
+          "published_at": "2026-04-29T15:00:00",
+          "sentiment": "positive",
+          "is_new": true
+        }
+      ],
       "disclosures": [
         {
           "date": "2026-04-29",
@@ -140,24 +160,37 @@
       "reports": [
         {
           "broker": "NH투자증권",
-          "title": "수주 슈퍼사이클 본격화, TP 상향",
+          "title": "수주 슈퍼사이클 본격화, TP 280,000원으로 상향",
           "url": "https://example.com/r1",
           "date": "2026-04-30",
-          "is_new": true
+          "is_new": true,
+          "summary": "카타르 LNG선 수주 모멘텀이 본격화되면서 2026년 매출 성장이 예상보다 가파를 전망. 후판가 인상 부담은 수주 잔고 회복으로 상쇄 가능.",
+          "key_points": [
+            "카타르 2차 LNG선 12척 수주 임박, 1.7조원 규모",
+            "1Q26 OPM 7.3%로 가이던스 상회",
+            "TP 255,000원 → 280,000원 (+9.8%)"
+          ]
         },
         {
           "broker": "삼성증권",
-          "title": "LNG선 수주 모멘텀 지속",
+          "title": "LNG선 수주 모멘텀 지속, 2H26 추가 수주 기대",
           "url": "https://example.com/r2",
           "date": "2026-04-30",
-          "is_new": true
+          "is_new": true,
+          "summary": "해양플랜트 부문도 회복세. ExxonMobil 모잠비크 LNG 프로젝트 EPC 입찰 참여 예정.",
+          "key_points": [
+            "LNG선 수주잔고 32척, 2027년까지 가시성 확보",
+            "ExxonMobil 프로젝트 등 해양 부문 모멘텀"
+          ]
         },
         {
           "broker": "미래에셋",
           "title": "2Q26 실적 가시성 양호",
           "url": "https://example.com/r3",
           "date": "2026-04-29",
-          "is_new": false
+          "is_new": false,
+          "summary": "",
+          "key_points": []
         }
       ],
       "consensus": {
@@ -165,6 +198,7 @@
           {
             "date": "2026-04-29",
             "term": "Q",
+            "period": "2026년 2분기",
             "value": 4521,
             "previous": 4280,
             "change_pct": 5.6,
@@ -173,6 +207,7 @@
           {
             "date": "2026-04-22",
             "term": "Q",
+            "period": "2026년 2분기",
             "value": 4280,
             "previous": 4150,
             "change_pct": 3.1,
@@ -183,6 +218,7 @@
           {
             "date": "2026-04-29",
             "term": "Y",
+            "period": "2026년",
             "value": 19500,
             "previous": 18500,
             "change_pct": 5.4,
@@ -191,6 +227,7 @@
           {
             "date": "2026-04-15",
             "term": "Y",
+            "period": "2026년",
             "value": 18500,
             "previous": 18000,
             "change_pct": 2.8,
@@ -199,6 +236,7 @@
           {
             "date": "2026-03-30",
             "term": "Y",
+            "period": "2026년",
             "value": 18000,
             "previous": 17200,
             "change_pct": 4.7,
@@ -213,6 +251,17 @@
       "price": 12840,
       "change_pct": 1.8,
       "has_chart": true,
+      "news": [
+        {
+          "id": "sn03",
+          "title": "삼성중공업, 모잠비크 FLNG 셸 우선협상자 선정 임박",
+          "summary": "셸이 발주한 모잠비크 Rovuma LNG FLNG 1기에 대해 삼성중공업이 우선협상대상자로 거론. 약 1.5조원 규모.",
+          "url": "https://example.com/sn03",
+          "published_at": "2026-04-29T14:20:00",
+          "sentiment": "positive",
+          "is_new": true
+        }
+      ],
       "disclosures": [
         {
           "date": "2026-04-29",
@@ -224,17 +273,24 @@
       "reports": [
         {
           "broker": "키움증권",
-          "title": "FLNG 협상 진전, TP 상향",
+          "title": "FLNG 협상 진전, TP 14,500원으로 상향",
           "url": "https://example.com/r4",
           "date": "2026-04-30",
-          "is_new": true
+          "is_new": true,
+          "summary": "셸 모잠비크 FLNG 우협 선정 시 2026년 매출 +12% 효과. 후판가 인상은 단기 부담이나 수주 모멘텀이 압도.",
+          "key_points": [
+            "FLNG 1기 우협 선정 시 1.5조원 규모",
+            "수주잔고 28척, OPM 6%대 회복 예상"
+          ]
         },
         {
           "broker": "대신증권",
           "title": "수주잔고 견조",
           "url": "https://example.com/r5",
           "date": "2026-04-28",
-          "is_new": false
+          "is_new": false,
+          "summary": "",
+          "key_points": []
         }
       ],
       "consensus": {
@@ -243,6 +299,7 @@
           {
             "date": "2026-04-29",
             "term": "Y",
+            "period": "2026년",
             "value": 8200,
             "previous": 8000,
             "change_pct": 2.5,
@@ -257,6 +314,7 @@
       "price": 82400,
       "change_pct": -0.7,
       "has_chart": true,
+      "news": [],
       "disclosures": [],
       "reports": [
         {
@@ -264,7 +322,12 @@
           "title": "美 해군 MRO 모멘텀",
           "url": "https://example.com/r6",
           "date": "2026-04-29",
-          "is_new": false
+          "is_new": false,
+          "summary": "한화오션이 미 해군 7함대 MRO 사업에 본격 진출. 5년간 1조원 매출 기대.",
+          "key_points": [
+            "美 7함대 MRO 계약 체결",
+            "방산 수주잔고 확대"
+          ]
         }
       ],
       "consensus": {
@@ -273,6 +336,7 @@
           {
             "date": "2026-04-25",
             "term": "Y",
+            "period": "2026년",
             "value": 12800,
             "previous": 12500,
             "change_pct": 2.4,
