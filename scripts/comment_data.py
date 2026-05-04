@@ -168,7 +168,7 @@ def fetch_stock_comments(all_codes: list[str], last_trading_day: str,
     Returns: {code: {selected_ids: [...], comments: {id: {...}}}}
     """
     BASE_URL = ("https://api-v2.deepsearch.com/v1/articles/"
-                "politics,economy,society,culture,world,tech,entertainment,opinion")
+                "politics,economy,society,culture,world,tech,opinion")
     COLUMNS = ["id", "title", "publisher", "summary", "published_at", "content_url"]
 
     comment_dict = {}
