@@ -632,11 +632,31 @@ ul { list-style: none; padding: 0; margin: 0; }
 }
 
 /* Chart */
+.chart-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
 .chart-tabs {
   display: flex;
   gap: 4px;
-  margin-bottom: 10px;
 }
+.chart-range-change {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+.chart-range-change .change-up,
+.chart-range-change .change-down {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+.chart-range-change .change-up { color: var(--up); background: var(--up-bg); }
+.chart-range-change .change-down { color: var(--down); background: var(--down-bg); }
 .chart-tab {
   font-family: var(--font-mono);
   font-size: 12px;

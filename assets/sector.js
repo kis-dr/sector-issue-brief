@@ -266,11 +266,14 @@
           ${s.has_chart ? `
             <div class="detail-row">
               <h4 class="detail-label">📈 가격 차트</h4>
-              <div class="chart-tabs">
-                <button class="chart-tab active" data-range="1M">1M</button>
-                <button class="chart-tab" data-range="3M">3M</button>
-                <button class="chart-tab" data-range="1Y">1Y</button>
-                <button class="chart-tab" data-range="YTD">YTD</button>
+              <div class="chart-toolbar">
+                <div class="chart-tabs">
+                  <button class="chart-tab active" data-range="1M">1M</button>
+                  <button class="chart-tab" data-range="3M">3M</button>
+                  <button class="chart-tab" data-range="1Y">1Y</button>
+                  <button class="chart-tab" data-range="YTD">YTD</button>
+                </div>
+                <div class="chart-range-change"></div>
               </div>
               <div class="chart-wrap">
                 <canvas class="stock-chart"></canvas>
@@ -461,9 +464,32 @@
     return data.filter(d => d.date >= fromStr);
   }
 
+  function calcRangeChange(sliced) {
+    if (!sliced || sliced.length < 2) return null;
+    const first = sliced[0].close;
+    const last = sliced[sliced.length - 1].close;
+    if (!first) return null;
+    return (last - first) / first * 100;
+  }
+
+  function updateRangeChange(card, sliced) {
+    const el = card.querySelector('.chart-range-change');
+    if (!el) return;
+    const pct = calcRangeChange(sliced);
+    if (pct == null) {
+      el.innerHTML = '';
+      return;
+    }
+    const cls = pct >= 0 ? 'change-up' : 'change-down';
+    const sign = pct >= 0 ? '+' : '';
+    el.innerHTML = `<span class="${cls}">${sign}${pct.toFixed(2)}%</span>`;
+  }
+
   function drawChart(canvas, data, range) {
-    const code = canvas.closest('.stock-card').dataset.code;
+    const card = canvas.closest('.stock-card');
+    const code = card.dataset.code;
     const sliced = sliceByRange(data, range);
+    updateRangeChange(card, sliced);
     if (chartInstances[code]) {
       chartInstances[code].destroy();
     }

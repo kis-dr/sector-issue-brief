@@ -16,62 +16,72 @@ import pandas as pd
 
 
 # ============================================================
-# 1. analyst_df → 애널리스트별 담당 섹터(WICS 3rd-level) 그룹화
+# 1. 애널리스트별 담당 WICS 섹터 그룹화
+# - main_combined_stock에서 종목 → 담당자 → WICS 매핑을 역산
+# - 한 애널리스트가 담당 종목들의 WICS 3rd-level을 모두 모음
 # ============================================================
 
 def group_sectors_by_analyst(analyst_df: pd.DataFrame,
+                              main_combined_stock: pd.DataFrame,
                               wics_slug_map: dict,
-                              sector_col: str = "애널업종(중)_리스트",
+                              coverage_sector_list: list[str],
                               email_col: str = "메일",
-                              name_col: str = "담당자") -> dict[str, dict]:
+                              name_col: str = "담당자",
+                              wics_col: str = "WICS분류") -> dict[str, dict]:
     """
+    한 애널리스트가 담당하는 종목들의 WICS 3rd-level을 그룹화.
+
+    Args:
+        analyst_df: 담당자 ↔ 메일 매핑
+        main_combined_stock: 종목 ↔ 담당자 ↔ WICS분류 (커버 종목만)
+        wics_slug_map: {WICS분류 풀네임: slug}
+        coverage_sector_list: 45개 커버 WICS 3rd-level
+        wics_col: main_combined_stock에서 WICS 분류 컬럼명
+
     Returns: {
         "홍길동": {
-            "name": "홍길동",
-            "email": "hong@...",
-            "sectors": ["조선", "건설", ...],     # WICS 3rd-level 한글
+            "name":    "홍길동",
+            "email":   "hong@...",
+            "sectors": ["조선", "건설"],          # WICS 3rd-level 한글
+            "wics_full": ["산업재-자본재-조선", ...],  # 풀네임
             "slugs":   ["shipbuilding", ...],
         }
     }
     """
-    out: dict[str, dict] = {}
+    # 담당자 → 메일 lookup
+    name_to_email = {}
     for _, row in analyst_df.iterrows():
         name = row.get(name_col)
         email = row.get(email_col)
-        if not name or not email:
+        if name and email:
+            name_to_email[name] = email
+
+    # 담당자 → WICS 풀네임 set
+    name_to_wics: dict[str, set] = {}
+    for _, row in main_combined_stock.iterrows():
+        name = row.get(name_col)
+        wics = row.get(wics_col)
+        if not name or not wics:
             continue
-
-        sec_list = row.get(sector_col)
-        if isinstance(sec_list, str):
-            try:
-                sec_list = ast.literal_eval(sec_list)
-            except Exception:
-                sec_list = []
-        if not isinstance(sec_list, list):
+        # coverage_sector_list 안에 있는 것만 채택
+        if wics not in coverage_sector_list:
             continue
+        name_to_wics.setdefault(name, set()).add(wics)
 
-        # 애널업종(중) → coverage_sector_list의 WICS-3rd로 매핑.
-        # 단, 송이의 analyst_df 구조에 따라 매핑 키가 다를 수 있음.
-        # 여기선 sec_list 원소를 그대로 wics_3rd로 본다고 가정.
-        # (실제 매핑이 다르면 호출부에서 mapping 수행 후 표준화한 sec_list를 넘겨야 함)
-        slugs = []
-        valid_sectors = []
-        for sec in sec_list:
-            # wics_slug_map의 키는 "산업재-자본재-조선" 형식. 3rd-level만 비교
-            for full_wics, slug in wics_slug_map.items():
-                if full_wics.split("-")[-1] == sec:
-                    slugs.append(slug)
-                    valid_sectors.append(sec)
-                    break
-
-        if not slugs:
+    out: dict[str, dict] = {}
+    for name, wics_set in name_to_wics.items():
+        email = name_to_email.get(name)
+        if not email:
             continue
-
+        wics_list = sorted(wics_set)
+        slugs = [wics_slug_map[w] for w in wics_list if w in wics_slug_map]
+        sectors_3rd = [w.split("-")[-1] for w in wics_list]
         out[name] = {
-            "name":    name,
-            "email":   email,
-            "sectors": valid_sectors,
-            "slugs":   slugs,
+            "name":      name,
+            "email":     email,
+            "sectors":   sectors_3rd,
+            "wics_full": wics_list,
+            "slugs":     slugs,
         }
     return out
 
@@ -313,10 +323,13 @@ def send_sector_emails(*,
                        repo_root: str,
                        trading_date: str,
                        analyst_df: pd.DataFrame,
+                       main_combined_stock: pd.DataFrame,
+                       coverage_sector_list: list[str],
                        wics_slug_map: dict,
                        pages_base_url: str,
                        smtp_user: str,
                        smtp_pass: str,
+                       wics_col: str = "WICS분류",
                        test_recipient: str | None = None,
                        dry_run: bool = False,
                        output_dir: str | None = None,
@@ -326,11 +339,18 @@ def send_sector_emails(*,
 
     test_recipient: 지정 시 모든 메일이 이 주소로만 감 (제목에 [TEST] prefix).
     dry_run: True면 발송 없이 HTML 파일로 저장 (output_dir 또는 ./output_mails).
+    wics_col: main_combined_stock 안의 WICS 분류 컬럼명 (기본 "WICS분류").
     """
     sectors_dir = os.path.join(repo_root, 'data', 'sectors')
 
-    # 1) 애널리스트별 담당 섹터 그룹
-    grouped = group_sectors_by_analyst(analyst_df, wics_slug_map)
+    # 1) 애널리스트별 담당 WICS 섹터 그룹화 (combined_stock에서 역산)
+    grouped = group_sectors_by_analyst(
+        analyst_df=analyst_df,
+        main_combined_stock=main_combined_stock,
+        wics_slug_map=wics_slug_map,
+        coverage_sector_list=coverage_sector_list,
+        wics_col=wics_col,
+    )
     if verbose:
         print(f"[Email] 애널리스트 {len(grouped)}명")
 

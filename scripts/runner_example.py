@@ -65,10 +65,13 @@ send_sector_emails(
     repo_root=REPO_ROOT,
     trading_date=last_trading_day,
     analyst_df=analyst_df,
+    main_combined_stock=main_combined_stock,    # 종목↔담당자↔WICS분류
+    coverage_sector_list=coverage_sector_list,
     wics_slug_map=wics_slug_map,
     pages_base_url="https://[유저명].github.io/sector-issue-brief",  # ← 변경
     smtp_user=os.getenv("GMAIL_USER"),
     smtp_pass=os.getenv("GMAIL_APP_PASS"),
-    test_recipient="112796@koreainvestment.com",   # 테스트 수신자 (모든 섹터 이 주소로)
+    wics_col="WICS분류",                         # ← combined_stock 컬럼명 확인 필요
+    test_recipient="112796@koreainvestment.com",
 )
 print(f"✓ {last_trading_day} 완료")
