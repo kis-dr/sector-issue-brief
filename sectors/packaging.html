@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>섹터별 이슈 브리핑</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+  <link rel="stylesheet" href="../assets/style.css?v=5">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <div class="brand">
+        <a href="../index.html" class="brand-mark-link"><span class="brand-mark">KIS</span></a>
+        <span class="brand-divider"></span>
+        <span class="brand-name">섹터별 이슈 브리핑</span>
+      </div>
+      <div class="meta">
+        <span class="date" id="trading-date">―</span>
+        <span class="meta-divider">·</span>
+        <a href="../index.html" class="back-link">← 전체 섹터</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container sector-page">
+    <div id="content">
+      <div class="loading-state" id="loading">데이터 로딩 중...</div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>© 한국투자증권 자산관리전략부 디지털리서치팀</span>
+      <span class="footer-divider">·</span>
+      <span>내부용 / Internal Use Only</span>
+    </div>
+  </footer>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="../assets/sector.js?v=5"></script>
+</body>
+</html>
