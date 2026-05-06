@@ -93,17 +93,41 @@ def group_sectors_by_analyst(analyst_df: pd.DataFrame,
 CSS = """
 body { font-family: -apple-system, 'Segoe UI', sans-serif; color: #111; background: #fafaf7;
        margin: 0; padding: 24px 0; line-height: 1.6; }
-.wrap { max-width: 720px; margin: 0 auto; background: #fff; border: 1px solid #e8e6e0; border-radius: 6px; overflow: hidden; }
+.wrap { max-width: 720px; margin: 0 auto; background: #fafaf7; border: 1px solid #e8e6e0; border-radius: 6px; overflow: hidden; padding-bottom: 4px; }
 .header { padding: 24px 28px; border-bottom: 1px solid #e8e6e0; background: #fff; }
 .header-brand { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: #888; text-transform: uppercase; margin-bottom: 4px; }
 .header h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
 .header .meta { font-size: 12px; color: #888; margin-top: 4px; }
 .test-banner { background: #fbeae7; border-bottom: 1px solid #c0392b; padding: 10px 28px; color: #c0392b; font-size: 12px; font-weight: 600; }
 .section { padding: 24px 28px; }
-.sector-block { padding: 24px 28px; border-top: 1px solid #e8e6e0; }
-.sector-title { font-size: 18px; font-weight: 700; margin: 0 0 16px 0; letter-spacing: -0.01em;
-                display: flex; align-items: center; gap: 10px; }
-.sector-path { font-size: 11px; color: #888; font-weight: 400; }
+.sector-block {
+  padding: 0;
+  margin: 24px 24px 0 24px;
+  border: 2px solid #111;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+.sector-block:first-of-type { margin-top: 24px; }
+.sector-header {
+  background: #111;
+  color: #fff;
+  padding: 14px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sector-header .sector-name {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.sector-header .sector-path {
+  font-size: 11px;
+  color: rgba(255,255,255,0.7);
+  letter-spacing: 0.04em;
+}
+.sector-body { padding: 20px 22px 22px 22px; }
 .summary-box { background: #fff; border: 1px solid #e8e6e0; border-left: 4px solid #111; padding: 16px 20px; margin-bottom: 18px; border-radius: 4px; }
 .summary-box .label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
                        background: #111; color: #fff; padding: 2px 6px; border-radius: 3px; display: inline-block; margin-bottom: 10px; }
@@ -249,15 +273,17 @@ def _build_sector_block(sector_data: dict, slug: str, pages_base_url: str) -> st
     sector_url = f"{pages_base_url.rstrip('/')}/sectors/{slug}.html"
     return f"""
       <div class="sector-block">
-        <h2 class="sector-title">
-          {_esc(sector_data.get('wics_3rd',''))}
+        <div class="sector-header">
+          <span class="sector-name">{_esc(sector_data.get('wics_3rd',''))}</span>
           <span class="sector-path">{_esc(wics_full)}</span>
-        </h2>
-        {body}
-        <div style="margin-top:16px;text-align:right;">
-          <a href="{_esc(sector_url)}" style="color:#111;font-size:12px;font-weight:600;text-decoration:underline;">
-            대시보드에서 종목별 상세 보기 →
-          </a>
+        </div>
+        <div class="sector-body">
+          {body}
+          <div style="margin-top:18px;text-align:right;">
+            <a href="{_esc(sector_url)}" style="color:#111;font-size:12px;font-weight:600;text-decoration:underline;">
+              대시보드에서 종목별 상세 보기 →
+            </a>
+          </div>
         </div>
       </div>
     """

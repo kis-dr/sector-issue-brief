@@ -1,0 +1,4 @@
+scripts/
+output_mails/
+__pycache__/
+*.pyc

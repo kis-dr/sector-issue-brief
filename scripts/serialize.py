@@ -252,10 +252,12 @@ def build_stock_dict(code: str, name: str,
                      disclosures: list[dict] | None,
                      research: list[dict] | None,
                      consensus: dict | None,
-                     comments: dict | None = None) -> dict:
+                     comments: dict | None = None,
+                     stk_flow: list[dict] | None = None) -> dict:
     """
     consensus = {"Q": df_q, "Y": df_y} 또는 None
     comments  = {"selected_ids": [...], "comments": {id: {...}}} 또는 None
+    stk_flow  = [{"date", "외인", "개인", "기관"}, ...] 최신순 7건 또는 None
     """
     price, change_pct = (None, None)
     if chart:
@@ -321,6 +323,7 @@ def build_stock_dict(code: str, name: str,
             "Q": cons_q,
             "Y": cons_y,
         },
+        "stk_flow": stk_flow or [],
     }
 
 
@@ -549,7 +552,8 @@ def run_serialization(
     disclosure_dict: dict,
     research_dict: dict,
     consensus_dict: dict,
-    comment_dict: dict,                             # NEW: fetch_stock_comments 결과
+    comment_dict: dict,                             # fetch_stock_comments 결과
+    stk_flow_7d: dict,                              # NEW: load_stk_flow_7d 결과 {code: [{date, 외인, 개인, 기관}]}
     wics_slug_map: dict,                            # WICS → slug
     gemini_client, MODEL_ID, types,
     chart_max_workers: int = 4,
@@ -620,6 +624,7 @@ def run_serialization(
                 research_dict.get(code),
                 consensus_dict.get(code),
                 comment_dict.get(code) if comment_dict else None,
+                stk_flow_7d.get(code) if stk_flow_7d else None,
             ))
         # 가격 변동 큰 순 정렬
         stocks_out.sort(key=lambda s: abs(s.get('change_pct') or 0), reverse=True)

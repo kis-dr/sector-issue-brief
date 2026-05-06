@@ -199,11 +199,17 @@ ANALYSIS_PROMPT = """너는 한국 주식시장 셀사이드 애널리스트다.
    - 나쁜 예: "주가가 상승했다", "투자자 관심 증가"
    - 뉴스가 부실해서 사유 추정 불가하면 "사유 미상"
 
-2. wics_sectors: 이 종목의 사업이 영향을 미치는 **한국 시장 WICS 3rd-level** (멀티 가능)
-   - 제공된 enum 옵션 중에서만 선택
-   - 한 종목이 여러 섹터에 영향: 모두 선택 (예: NVDA → 반도체 + AI 활용 산업)
-   - 한국 시장 연결고리가 약하면 빈 배열 []
-   - 보수적으로: 직접적 사업/공급망 연결만 인정
+2. wics_sectors: 이 종목이 한국 시장에 **직접적·실질적 영향**을 주는 WICS 3rd-level
+   - **매우 보수적으로** 매핑하라. 의심스러우면 빈 배열 [].
+   - 다음 4가지 중 하나에 해당해야만 매핑:
+     (a) 한국 종목과 **직접 경쟁 관계** (예: TSMC ↔ 삼성전자/SK하이닉스 → 반도체)
+     (b) 한국 종목의 **핵심 고객/공급업체** (예: 애플 ↔ LG디스플레이/삼성SDI → 디스플레이/2차전지)
+     (c) 한국 종목과 **동일한 글로벌 산업 사이클** (예: 글로벌 LNG선사 ↔ 한국 조선)
+     (d) 한국 종목과 **실시간 동조화 ETF/벤치마크** 관계 (예: NVDA ↔ 한국 반도체 패키지)
+   - 막연한 산업 카테고리 일치만으로는 매핑 금지.
+     예: 미국 산업재 종목(Quanta/EMCOR/Caterpillar 등)이 한국 자본재-기계와 사업 결합도 약하면 빈 배열 []
+   - 한 종목이 여러 섹터에 진짜로 영향: 모두 선택 (예: NVDA → 반도체 + AI 활용 산업)
+   - 직접적 사업/공급망 연결이 약하면 빈 배열 []
 
 JSON 배열로 반환. 입력 종목 순서와 동일하게."""
 
@@ -328,13 +334,16 @@ def aggregate_movers_by_wics(movers: pd.DataFrame) -> dict[str, list[dict]]:
             "is_52w_high": bool(mv.get('is_52w_high', False)),
             "is_52w_low":  bool(mv.get('is_52w_low', False)),
             "reason":      mv.get('reason') or "사유 미상",
+            "description": str(mv.get('기업개요')) if pd.notna(mv.get('기업개요')) else "",
         }
         for sec in sectors:
             out.setdefault(sec, []).append(entry)
 
-    # 섹터별로 |change_pct| 큰 순 정렬
+    # 섹터별로 |change_pct| 큰 순 정렬 + 최대 5개로 cap
+    MAX_PER_SECTOR = 5
     for sec in out:
         out[sec].sort(key=lambda x: abs(x['change_pct']), reverse=True)
+        out[sec] = out[sec][:MAX_PER_SECTOR]
     return out
 
 
@@ -348,9 +357,11 @@ def build_us_movers_dict(last_trading_day: str,
                           kis_gr_df: pd.DataFrame,
                           coverage_sectors: list[str],
                           gemini_client, MODEL_ID: str, types,
-                          header_deepsearch: str, ds_auth) -> dict[str, list[dict]]:
+                          header_deepsearch: str, ds_auth,
+                          description_db: pd.DataFrame | None = None) -> dict[str, list[dict]]:
     """
     US movers 처리 end-to-end.
+    description_db: ['Symbol', 'description_translate'] 컬럼 갖는 DataFrame (선택)
     Returns: {wics_3rd: [movers...]} — sectors/{slug}.json에 그대로 사용 가능
     """
     # 1) 로드
@@ -386,6 +397,16 @@ def build_us_movers_dict(last_trading_day: str,
         gemini_client, MODEL_ID, types,
         batch_size=10, max_news_per_stock=5,
     )
+
+    # 5.5) description 머지 (있을 때만)
+    if description_db is not None and not description_db.empty:
+        movers = movers.merge(
+            description_db[['Symbol', 'description_translate']],
+            on='Symbol', how='left',
+        )
+        movers.rename(columns={'description_translate': '기업개요'}, inplace=True)
+    else:
+        movers['기업개요'] = None
 
     # 6) WICS별 dict
     result = aggregate_movers_by_wics(movers)
