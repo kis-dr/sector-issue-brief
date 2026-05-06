@@ -445,25 +445,100 @@ ul { list-style: none; padding: 0; margin: 0; }
 .tag-neutral { background: var(--neutral-bg); color: var(--neutral); }
 
 /* ============================================
-   US Movers
+   US Movers (collapsible cards, click to expand description)
    ============================================ */
 .us-movers-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
-.us-mover {
+.us-mover-card {
   background: var(--bg-card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 14px 20px;
+  overflow: hidden;
+  transition: border-color 0.15s;
 }
-.us-mover-head {
+.us-mover-card:hover { border-color: var(--ink-3); }
+.us-mover-card[open] { border-color: var(--ink); }
+.us-mover-summary {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 6px;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  list-style: none;
   flex-wrap: wrap;
+}
+.us-mover-summary::-webkit-details-marker { display: none; }
+.us-mover-toggle {
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+  font-size: 14px;
+  margin-left: auto;
+  transition: transform 0.15s;
+}
+.us-mover-card[open] .us-mover-toggle {
+  transform: rotate(180deg);
+  color: var(--ink);
+}
+.us-mover-detail {
+  padding: 14px 16px 16px 16px;
+  border-top: 1px dashed var(--line);
+  background: var(--bg);
+}
+.us-mover-desc-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.us-mover-desc {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+/* ============================================
+   Flow Table (거래대금 7일)
+   ============================================ */
+.flow-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.flow-table th, .flow-table td {
+  padding: 6px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+}
+.flow-table th {
+  background: var(--bg);
+  font-weight: 700;
+  color: var(--ink-2);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.flow-table th:first-child, .flow-table td:first-child {
+  text-align: left;
+}
+.flow-table .flow-date {
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.flow-table tr:last-child td { border-bottom: none; }
+.flow-table .change-up { color: var(--up); font-weight: 700; }
+.flow-table .change-down { color: var(--down); font-weight: 700; }
+@media (max-width: 640px) {
+  .flow-table { font-size: 11px; }
+  .flow-table th, .flow-table td { padding: 5px 8px; }
 }
 .ticker {
   font-family: var(--font-mono);

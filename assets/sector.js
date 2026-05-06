@@ -36,6 +36,41 @@
   const fmtPriceUSD = (p) => p == null ? '-' : `$${p.toFixed(2)}`;
   const fmtPriceKRW = (p) => p == null ? '-' : new Intl.NumberFormat('ko-KR').format(p);
 
+  // 거래대금 (원 → 억원 변환, 색상)
+  function fmtFlow(val) {
+    if (val == null || isNaN(val)) return '<span style="color:#aaa;">-</span>';
+    const v = Number(val);
+    const eok = v / 100_000_000;
+    const sign = v > 0 ? '+' : '';
+    const cls = v > 0 ? 'change-up' : (v < 0 ? 'change-down' : '');
+    const txt = `${sign}${eok.toFixed(0)}`;
+    return `<span class="${cls}">${txt}</span>`;
+  }
+  function flowTable(flows) {
+    if (!flows || flows.length === 0) return '';
+    const rows = flows.map(f => `
+      <tr>
+        <td class="flow-date">${fmtDate(f.date)}</td>
+        <td>${fmtFlow(f['외인'])}</td>
+        <td>${fmtFlow(f['기관'])}</td>
+        <td>${fmtFlow(f['개인'])}</td>
+      </tr>
+    `).join('');
+    return `
+      <table class="flow-table">
+        <thead>
+          <tr>
+            <th>일자</th>
+            <th>외인</th>
+            <th>기관</th>
+            <th>개인</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
   // ─────────────────────────────────────────────
   // AI 요약 박스
   // ─────────────────────────────────────────────
@@ -108,35 +143,51 @@
   }
 
   // ─────────────────────────────────────────────
-  // 미국 시장 동향
+  // 미국 시장 동향 (관련) - 카드 클릭 시 기업개요 펼침, 디폴트 접기, 더보기 3건
   // ─────────────────────────────────────────────
   function renderUSMovers(data) {
     const movers = data.us_movers || [];
     if (movers.length === 0) return '';
-    const items = movers.map(m => {
+    const total = movers.length;
+
+    const items = movers.map((m, idx) => {
       const badges = [];
       if (m.is_52w_high) badges.push('<span class="badge-high">52주 최고</span>');
       if (m.is_52w_low) badges.push('<span class="badge-low">52주 최저</span>');
+      const hasDesc = (m.description && m.description.trim());
       return `
-        <li class="us-mover">
-          <div class="us-mover-head">
+        <details class="us-mover-card" data-idx="${idx}">
+          <summary class="us-mover-summary">
             <span class="ticker">${$h(m.ticker)}-US</span>
             <span class="us-name">${$h(m.name)}</span>
             <span class="us-price">${fmtPriceUSD(m.price)}</span>
             ${fmtChange(m.change_pct)}
             ${badges.join('')}
-          </div>
-          <p class="us-reason">${$h(m.reason)}</p>
-        </li>
+            ${hasDesc ? '<span class="us-mover-toggle">▾</span>' : ''}
+          </summary>
+          ${hasDesc ? `
+            <div class="us-mover-detail">
+              <div class="us-mover-desc-label">기업개요</div>
+              <div class="us-mover-desc">${$h(m.description)}</div>
+            </div>
+          ` : ''}
+        </details>
       `;
     }).join('');
+
     return `
-      <section class="block">
+      <section class="block" id="us-movers-block">
         <div class="block-header">
           <h2 class="block-title">미국 시장 동향 (관련)</h2>
-          <span class="block-count">${movers.length}건</span>
+          <span class="block-count" id="us-movers-count">3 / ${total}건</span>
         </div>
-        <ul class="us-movers-list">${items}</ul>
+        <div class="us-movers-list" id="us-movers-list">${items}</div>
+        ${total > 3 ? `
+          <button class="show-more-btn" id="show-more-us">
+            <span class="show-more-text">더보기 (${total - 3}건 더)</span>
+            <span class="show-less-text">접기</span>
+          </button>
+        ` : ''}
       </section>
     `;
   }
@@ -281,6 +332,12 @@
               </div>
             </div>
           ` : ''}
+          ${(s.stk_flow && s.stk_flow.length > 0) ? `
+            <div class="detail-row">
+              <h4 class="detail-label">💰 거래대금 (최근 ${s.stk_flow.length}거래일, 단위: 억원)</h4>
+              ${flowTable(s.stk_flow)}
+            </div>
+          ` : ''}
           ${(s.news && s.news.length > 0) ? `
             <div class="detail-row">
               <h4 class="detail-label">📰 종목 뉴스 (어제자, 핵심 ${s.news.length}건)</h4>
@@ -292,7 +349,7 @@
             <ul class="detail-list">${disclosureItems(s.disclosures)}</ul>
           </div>
           <div class="detail-row">
-            <h4 class="detail-label">💹 컨센서스 변화 (최근 5건)</h4>
+            <h4 class="detail-label">💹 영업이익 컨센서스 변화 (최근 5건)</h4>
             ${consensusBlock(s.consensus?.Q, s.consensus?.Y)}
           </div>
           <div class="detail-row">
@@ -361,9 +418,32 @@
       + renderStocks(data);
 
     bindNewsToggle(data);
+    bindUSMoversToggle(data);
     bindStockSearchSort();
     bindChartLazy();
     bindReportToggles();
+  }
+
+  // ─────────────────────────────────────────────
+  // US movers 더보기 토글 (디폴트 3건)
+  // ─────────────────────────────────────────────
+  function bindUSMoversToggle(data) {
+    const list = document.getElementById('us-movers-list');
+    const btn  = document.getElementById('show-more-us');
+    const cnt  = document.getElementById('us-movers-count');
+    if (!list) return;
+    const items = Array.from(list.querySelectorAll('.us-mover-card'));
+    const total = items.length;
+    const DEFAULT = 3;
+    let expanded = false;
+    function apply() {
+      const target = expanded ? total : DEFAULT;
+      items.forEach((it, i) => { it.style.display = i < target ? '' : 'none'; });
+      if (cnt) cnt.textContent = `${target} / ${total}건`;
+      if (btn) btn.classList.toggle('expanded', expanded);
+    }
+    apply();
+    if (btn) btn.addEventListener('click', () => { expanded = !expanded; apply(); });
   }
 
   // ─────────────────────────────────────────────
