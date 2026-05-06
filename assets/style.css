@@ -875,6 +875,90 @@ ul { list-style: none; padding: 0; margin: 0; }
   padding: 4px 0 !important;
 }
 
+/* News keyword tag */
+.news-kw-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: #e8e8ff;
+  color: #4040b0;
+  flex-shrink: 0;
+}
+/* News summary toggle */
+.news-summary-toggle { margin-top: 6px; }
+.news-summary-btn {
+  font-size: 11px;
+  color: var(--ink-3);
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.news-summary-btn::-webkit-details-marker { display: none; }
+.news-summary-btn::before { content: '▸ '; }
+.news-summary-toggle[open] .news-summary-btn::before { content: '▾ '; }
+.news-summary-box {
+  margin-top: 6px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+/* US mover news links */
+.us-mover-news {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+.us-news-link {
+  font-size: 12px;
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--ink-3);
+  padding-bottom: 1px;
+  display: inline-block;
+}
+.us-news-link:hover { border-color: var(--ink); }
+.us-mover-reason {
+  font-size: 13px;
+  color: var(--ink);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+/* Empty state */
+.empty-state {
+  font-size: 12px;
+  color: var(--ink-3);
+  padding: 16px 0;
+  text-align: center;
+  font-style: italic;
+}
+/* Show more button */
+.show-more-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: all 0.15s;
+}
+.show-more-btn:hover { border-color: var(--ink); color: var(--ink); }
+.show-more-btn .show-less-text { display: none; }
+.show-more-btn.expanded .show-more-text { display: none; }
+.show-more-btn.expanded .show-less-text { display: inline; }
 /* Consensus 2-column 그리드 */
 .cons-grid {
   display: grid;

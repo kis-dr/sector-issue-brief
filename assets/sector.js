@@ -36,18 +36,35 @@
   const fmtPriceUSD = (p) => p == null ? '-' : `$${p.toFixed(2)}`;
   const fmtPriceKRW = (p) => p == null ? '-' : new Intl.NumberFormat('ko-KR').format(p);
 
-  // 거래대금 (원 → 억원 변환, 색상)
+  // 거래대금/컨센서스 포맷: 원 → "1조 2,345억원" / 1억 미만 "0.12억원"
+  function fmtKRW(val) {
+    if (val == null || isNaN(val)) return '-';
+    const v = Number(val);
+    const neg = v < 0;
+    const abs_v = Math.abs(v);
+    let txt;
+    if (abs_v >= 1_000_000_000_000) {
+      const jo = Math.floor(abs_v / 1_000_000_000_000);
+      const eok = Math.round((abs_v % 1_000_000_000_000) / 100_000_000);
+      txt = eok > 0 ? `${jo.toLocaleString()}조 ${eok.toLocaleString()}억` : `${jo.toLocaleString()}조`;
+    } else if (abs_v >= 100_000_000) {
+      txt = `${Math.round(abs_v / 100_000_000).toLocaleString()}억`;
+    } else {
+      txt = `${(abs_v / 100_000_000).toFixed(2)}억`;
+    }
+    return neg ? `-${txt}` : txt;
+  }
+
+  // 거래대금 (원 → 억원 + 색상)
   function fmtFlow(val) {
     if (val == null || isNaN(val)) return '<span style="color:#aaa;">-</span>';
     const v = Number(val);
-    const eok = v / 100_000_000;
     const sign = v > 0 ? '+' : '';
     const cls = v > 0 ? 'change-up' : (v < 0 ? 'change-down' : '');
-    const txt = `${sign}${eok.toFixed(0)}`;
-    return `<span class="${cls}">${txt}</span>`;
+    return `<span class="${cls}">${sign}${fmtKRW(v)}원</span>`;
   }
   function flowTable(flows) {
-    if (!flows || flows.length === 0) return '';
+    if (!flows || flows.length === 0) return '<div class="empty-state">거래대금 데이터 없음</div>';
     const rows = flows.map(f => `
       <tr>
         <td class="flow-date">${fmtDate(f.date)}</td>
@@ -58,14 +75,7 @@
     `).join('');
     return `
       <table class="flow-table">
-        <thead>
-          <tr>
-            <th>일자</th>
-            <th>외인</th>
-            <th>기관</th>
-            <th>개인</th>
-          </tr>
-        </thead>
+        <thead><tr><th>일자</th><th>외인</th><th>기관</th><th>개인</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
     `;
@@ -113,18 +123,24 @@
       `;
     }
     const total = news.length;
-    const items = news.map((n, idx) => `
+    const items = news.map((n, idx) => {
+      const kwTag = n.keyword ? `<span class="news-kw-tag">${$h(n.keyword)}</span>` : '';
+      const summaryBox = n.summary
+        ? `<details class="news-summary-toggle"><summary class="news-summary-btn">요약 보기</summary><div class="news-summary-box">${$h(n.summary)}</div></details>`
+        : '';
+      return `
       <li class="news-item" data-idx="${idx}">
         <div class="news-meta">
           ${sentimentTag(n.sentiment)}
+          ${kwTag}
           ${n.is_new ? '<span class="new-dot" title="신규"></span>' : ''}
           <span class="news-date">${fmtDate(n.published_at)} ${fmtTime(n.published_at)}</span>
           <span class="news-source">${$h(n.source)}</span>
         </div>
         <a href="${$h(n.url)}" target="_blank" rel="noopener" class="news-title">${$h(n.title)}</a>
-        ${n.summary ? `<p class="news-summary">${$h(n.summary)}</p>` : ''}
+        ${summaryBox}
       </li>
-    `).join('');
+    `}).join('');
     return `
       <section class="block" id="news-block">
         <div class="block-header">
@@ -163,14 +179,20 @@
             <span class="us-price">${fmtPriceUSD(m.price)}</span>
             ${fmtChange(m.change_pct)}
             ${badges.join('')}
-            ${hasDesc ? '<span class="us-mover-toggle">▾</span>' : ''}
+            <span class="us-mover-toggle">▾</span>
           </summary>
-          ${hasDesc ? `
-            <div class="us-mover-detail">
+          <div class="us-mover-detail">
+            <div class="us-mover-reason"><strong>변동 원인:</strong> ${$h(m.reason)}</div>
+            ${(m.news_urls && m.news_urls.length) ? `
+              <div class="us-mover-news">
+                ${m.news_urls.map(n => `<a href="${$h(n.url)}" target="_blank" rel="noopener" class="us-news-link">📰 ${$h(n.title || '관련 뉴스')}</a>`).join('')}
+              </div>
+            ` : ''}
+            ${hasDesc ? `
               <div class="us-mover-desc-label">기업개요</div>
               <div class="us-mover-desc">${$h(m.description)}</div>
-            </div>
-          ` : ''}
+            ` : ''}
+          </div>
         </details>
       `;
     }).join('');
@@ -196,7 +218,7 @@
   // 종목별 상세
   // ─────────────────────────────────────────────
   function disclosureItems(arr) {
-    if (!arr || arr.length === 0) return '<li class="empty-line">데이터 없음</li>';
+    if (!arr || arr.length === 0) return '<li class="empty-state">공시 데이터 없음</li>';
     return arr.map(d => `
       <li>
         ${d.is_new ? '<span class="new-dot"></span>' : ''}
@@ -206,7 +228,7 @@
     `).join('');
   }
   function reportItems(arr) {
-    if (!arr || arr.length === 0) return '<li class="empty-line">데이터 없음</li>';
+    if (!arr || arr.length === 0) return '<li class="empty-state">리포트 데이터 없음</li>';
     return arr.map(r => {
       const hasDetail = (r.summary && r.summary.trim()) || (r.key_points && r.key_points.length);
       const keyPointsHtml = (r.key_points && r.key_points.length)
@@ -236,7 +258,7 @@
 
   // 종목별 뉴스 (stock.news) — 펼쳐진 종목 카드 안에서 표시
   function stockNewsItems(arr) {
-    if (!arr || arr.length === 0) return '<li class="empty-line">데이터 없음</li>';
+    if (!arr || arr.length === 0) return '<li class="empty-state">종목 뉴스 없음</li>';
     return arr.map(n => `
       <li class="stock-news-item">
         <div class="stock-news-meta">
@@ -254,8 +276,8 @@
     }
     const items = arr.map(c => {
       const arrow = c.previous != null && c.value != null
-        ? `<span class="cons-arrow">${fmtNumber(c.previous)} → ${fmtNumber(c.value)}</span>`
-        : c.value != null ? `<span class="cons-arrow">${fmtNumber(c.value)}</span>` : '';
+        ? `<span class="cons-arrow">${fmtKRW(c.previous)}원 → ${fmtKRW(c.value)}원</span>`
+        : c.value != null ? `<span class="cons-arrow">${fmtKRW(c.value)}원</span>` : '';
       const pct = c.change_pct != null
         ? `<span class="cons-pct ${c.change_pct >= 0 ? 'change-up' : 'change-down'}">${c.change_pct >= 0 ? '+' : ''}${c.change_pct.toFixed(1)}%</span>`
         : '';
