@@ -660,6 +660,12 @@ ul { list-style: none; padding: 0; margin: 0; }
   font-weight: 700;
   color: var(--ink);
 }
+.market-cap {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #999;
+  margin-left: 2px;
+}
 .stock-counts {
   display: flex;
   gap: 6px;
@@ -1283,4 +1289,101 @@ a.stock-news-title:hover { text-decoration: underline; }
     font-size: 11px;
     gap: 8px;
   }
+}
+
+/* ============================================
+   v9 추가: sector return, fwd PE, has-new dot, cons line chart, global research
+   ============================================ */
+
+/* 섹터 등락률 헤더 배지 */
+.sector-title-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.sector-return-badge {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sector-return-badge .change-up,
+.sector-return-badge .change-down {
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+.sector-return-badge .change-up { background: var(--up-bg); color: var(--up); }
+.sector-return-badge .change-down { background: var(--down-bg); color: var(--down); }
+.sr-note { font-size: 10px; font-weight: 500; color: var(--ink-3); }
+
+/* index 카드 등락률 */
+.card-return {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  margin: 4px 0 6px 0;
+  display: inline-block;
+}
+.card-return.change-up { color: var(--up); }
+.card-return.change-down { color: var(--down); }
+
+/* fwd PE */
+.fwd-pe {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #999;
+  margin-left: 2px;
+}
+
+/* 종목 카드 빨간점 (신규 이슈) */
+.stock-card .card-new-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #c0392b;
+  margin-right: 6px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.stock-card.has-new {
+  border-left: 3px solid #c0392b;
+}
+
+/* 컨센서스 라인차트 */
+.cons-side-header {
+  display: flex;
+  align-items: baseline;
+  font-size: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.cons-period-label {
+  font-weight: 700;
+  color: var(--ink);
+}
+.cons-latest {
+  color: var(--ink-2);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.cons-chart {
+  width: 100%;
+  height: 120px;
+}
+
+/* 독점 글로벌 리서치 카테고리 태그 */
+.gr-cat {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 2px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #fef3e0;
+  color: #b87a00;
+  margin-right: 4px;
 }

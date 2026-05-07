@@ -55,13 +55,13 @@
     return neg ? `-${txt}` : txt;
   }
 
-  // 거래대금 (원 → 억원 + 색상)
+  // 거래대금 (원 → "1조 2,345억" / "0.12억" + 색상, 셀 내 '원' 표기 없음)
   function fmtFlow(val) {
     if (val == null || isNaN(val)) return '<span style="color:#aaa;">-</span>';
     const v = Number(val);
     const sign = v > 0 ? '+' : '';
     const cls = v > 0 ? 'change-up' : (v < 0 ? 'change-down' : '');
-    return `<span class="${cls}">${sign}${fmtKRW(v)}원</span>`;
+    return `<span class="${cls}">${sign}${fmtKRW(v)}</span>`;
   }
   function flowTable(flows) {
     if (!flows || flows.length === 0) return '<div class="empty-state">거래대금 데이터 없음</div>';
@@ -270,49 +270,56 @@
       </li>
     `).join('');
   }
-  function consensusOneSide(arr, term) {
-    if (!arr || arr.length === 0) {
-      return `<div class="cons-side cons-empty">${term === 'Y' ? '연간' : '분기'} 컨센서스 변화 없음</div>`;
+  // 컨센서스: dict {period, latest, is_new, series: [{date, value}]} → 라인차트
+  function consensusOneSide(c, term) {
+    const label = term === 'Y' ? '연간' : '분기';
+    if (!c || !c.series || c.series.length === 0) {
+      return `<div class="cons-side cons-empty">${label} 데이터 없음</div>`;
     }
-    const items = arr.map(c => {
-      const arrow = c.previous != null && c.value != null
-        ? `<span class="cons-arrow">${fmtKRW(c.previous)}원 → ${fmtKRW(c.value)}원</span>`
-        : c.value != null ? `<span class="cons-arrow">${fmtKRW(c.value)}원</span>` : '';
-      const pct = c.change_pct != null
-        ? `<span class="cons-pct ${c.change_pct >= 0 ? 'change-up' : 'change-down'}">${c.change_pct >= 0 ? '+' : ''}${c.change_pct.toFixed(1)}%</span>`
-        : '';
-      return `
-        <li>
-          ${c.is_new ? '<span class="new-dot"></span>' : ''}
-          <span class="line-date">${fmtDate(c.date)}</span>
-          ${c.period ? `<span class="cons-period">${$h(c.period)}</span>` : ''}
-          ${arrow} ${pct}
-        </li>
-      `;
-    }).join('');
+    const period = c.period || label;
+    const latest = c.latest != null ? `${fmtKRW(c.latest)}` : '-';
+    const newDot = c.is_new ? '<span class="new-dot" style="margin-right:4px;"></span>' : '';
     return `
       <div class="cons-side">
-        <div class="cons-side-label">${term === 'Y' ? '연간' : '분기'}</div>
-        <ul class="cons-list">${items}</ul>
+        <div class="cons-side-header">
+          ${newDot}<span class="cons-period-label">${$h(period)}</span>
+          <span class="cons-latest">: ${latest}</span>
+        </div>
+        <canvas class="cons-chart" data-series='${JSON.stringify(c.series)}'></canvas>
       </div>
     `;
   }
-  function consensusBlock(arrQ, arrY) {
+  function consensusBlock(cQ, cY) {
     return `
       <div class="cons-grid">
-        ${consensusOneSide(arrQ, 'Q')}
-        ${consensusOneSide(arrY, 'Y')}
+        ${consensusOneSide(cQ, 'Q')}
+        ${consensusOneSide(cY, 'Y')}
       </div>
     `;
   }
 
   function renderStock(s, idx) {
+    const capHtml = s.market_cap != null
+      ? `<span class="market-cap">${fmtKRW(s.market_cap)}</span>`
+      : '';
+    const peHtml = s.fwd_pe != null
+      ? `<span class="fwd-pe">PE ${s.fwd_pe.toFixed(1)}</span>`
+      : '';
+    const newDotHtml = s.has_new
+      ? '<span class="card-new-dot" title="당일 신규 이슈"></span>'
+      : '';
     const priceHtml = s.has_chart && s.price != null
       ? `<div class="stock-price">
            <span class="price-num">${fmtPriceKRW(s.price)}</span>
            ${fmtChange(s.change_pct)}
+           ${capHtml}
+           ${peHtml}
          </div>`
-      : `<div class="stock-price"><span class="price-num">-</span></div>`;
+      : `<div class="stock-price">
+           <span class="price-num">-</span>
+           ${capHtml}
+           ${peHtml}
+         </div>`;
 
     const counts = [
       `뉴스 ${(s.news || []).length}`,
@@ -324,9 +331,10 @@
     const dataName = `${s.name} ${s.code}`.toLowerCase();
 
     return `
-      <details class="stock-card" data-name="${$h(dataName)}" data-code="${$h(s.code)}" data-disclosure="${(s.disclosures || []).length}">
+      <details class="stock-card${s.has_new ? ' has-new' : ''}" data-name="${$h(dataName)}" data-code="${$h(s.code)}" data-disclosure="${(s.disclosures || []).length}">
         <summary class="stock-summary">
           <div class="stock-head">
+            ${newDotHtml}
             <span class="stock-code">${$h(s.code)}</span>
             <span class="stock-name">${$h(s.name)}</span>
           </div>
@@ -356,7 +364,7 @@
           ` : ''}
           ${(s.stk_flow && s.stk_flow.length > 0) ? `
             <div class="detail-row">
-              <h4 class="detail-label">💰 거래대금 (최근 ${s.stk_flow.length}거래일, 단위: 억원)</h4>
+              <h4 class="detail-label">💰 거래대금 (최근 ${s.stk_flow.length}거래일, 단위: 원)</h4>
               ${flowTable(s.stk_flow)}
             </div>
           ` : ''}
@@ -371,7 +379,7 @@
             <ul class="detail-list">${disclosureItems(s.disclosures)}</ul>
           </div>
           <div class="detail-row">
-            <h4 class="detail-label">💹 영업이익 컨센서스 변화 (최근 5건)</h4>
+            <h4 class="detail-label">💹 영업이익 컨센서스 변화 (최근 1개월, 단위: 억원)</h4>
             ${consensusBlock(s.consensus?.Q, s.consensus?.Y)}
           </div>
           <div class="detail-row">
@@ -423,6 +431,10 @@
     tradingDateEl.textContent = fmtDate(data.trading_date);
     document.title = `${data.wics_3rd} - 섹터별 이슈 브리핑`;
 
+    const sectorReturnHtml = data.sector_return != null
+      ? `<div class="sector-return-badge">섹터 등락률 ${fmtChange(data.sector_return)} <span class="sr-note">시총가중평균</span></div>`
+      : '';
+
     const breadcrumb = `
       <nav class="breadcrumb">
         <a href="../index.html">전체</a><span class="bc-sep">›</span>
@@ -430,12 +442,16 @@
         <span>${$h(data.wics_2nd)}</span><span class="bc-sep">›</span>
         <span class="bc-current">${$h(data.wics_3rd)}</span>
       </nav>
-      <h1 class="sector-title">${$h(data.wics_3rd)}</h1>
+      <div class="sector-title-row">
+        <h1 class="sector-title">${$h(data.wics_3rd)}</h1>
+        ${sectorReturnHtml}
+      </div>
     `;
 
     contentEl.innerHTML = breadcrumb
       + renderSummary(data)
       + renderNews(data)
+      + renderGlobalResearch(data)
       + renderUSMovers(data)
       + renderStocks(data);
 
@@ -444,6 +460,52 @@
     bindStockSearchSort();
     bindChartLazy();
     bindReportToggles();
+  }
+
+  // ─────────────────────────────────────────────
+  // 독점 글로벌 리서치 (KIS 글로벌 리서치)
+  // ─────────────────────────────────────────────
+  function renderGlobalResearch(data) {
+    const items = data.global_research || [];
+    if (items.length === 0) {
+      return `
+        <section class="block">
+          <div class="block-header">
+            <h2 class="block-title">📚 독점 글로벌 리서치</h2>
+          </div>
+          <div class="empty-state">오늘 발행된 리서치 없음</div>
+        </section>
+      `;
+    }
+    const itemsHtml = items.slice(0, 10).map(r => {
+      const cat = r.category ? `<span class="gr-cat">${$h(r.category)}</span>` : '';
+      const summary = r.summary
+        ? `<details class="news-summary-toggle"><summary class="news-summary-btn">요약 보기</summary><div class="news-summary-box">${$h(r.summary)}</div></details>`
+        : '';
+      const titleHtml = r.url
+        ? `<a href="${$h(r.url)}" target="_blank" rel="noopener" class="news-title-link">${$h(r.title)}</a>`
+        : `<span class="news-title-link">${$h(r.title)}</span>`;
+      return `
+        <li class="news-item">
+          <div class="news-meta">
+            ${cat}
+            <span class="news-date">${fmtDate(r.published_at)}</span>
+            <span class="news-source">${$h(r.publisher)}</span>
+          </div>
+          ${titleHtml}
+          ${summary}
+        </li>
+      `;
+    }).join('');
+    return `
+      <section class="block">
+        <div class="block-header">
+          <h2 class="block-title">📚 독점 글로벌 리서치</h2>
+          <span class="block-count">${items.length}건</span>
+        </div>
+        <ul class="news-list">${itemsHtml}</ul>
+      </section>
+    `;
   }
 
   // ─────────────────────────────────────────────
@@ -642,28 +704,33 @@
   function bindChartLazy() {
     document.querySelectorAll('.stock-card').forEach(card => {
       const canvas = card.querySelector('.stock-chart');
-      if (!canvas) return;
       const code = card.dataset.code;
       const tabs = card.querySelectorAll('.chart-tab');
-      const wrap = card.querySelector('.chart-wrap');
       const loadingDiv = card.querySelector('.chart-loading');
       let loaded = false;
       let currentRange = '1M';
 
-      // 펼칠 때 차트 로드
       card.addEventListener('toggle', async () => {
-        if (!card.open || loaded) return;
-        try {
-          const data = await loadChartData(code);
-          if (loadingDiv) loadingDiv.style.display = 'none';
-          drawChart(canvas, data, currentRange);
-          loaded = true;
-        } catch (e) {
-          if (loadingDiv) loadingDiv.textContent = '차트 데이터 없음';
+        if (!card.open) return;
+        // 컨센 라인차트 그리기 (1회만)
+        card.querySelectorAll('.cons-chart').forEach(cv => {
+          if (cv.dataset.drawn === '1') return;
+          drawConsensusChart(cv);
+          cv.dataset.drawn = '1';
+        });
+        // 가격 차트
+        if (canvas && !loaded) {
+          try {
+            const data = await loadChartData(code);
+            if (loadingDiv) loadingDiv.style.display = 'none';
+            drawChart(canvas, data, currentRange);
+            loaded = true;
+          } catch (e) {
+            if (loadingDiv) loadingDiv.textContent = '차트 데이터 없음';
+          }
         }
       });
 
-      // 탭 전환
       tabs.forEach(tab => {
         tab.addEventListener('click', async () => {
           tabs.forEach(t => t.classList.remove('active'));
@@ -674,6 +741,48 @@
           if (data) drawChart(canvas, data, currentRange);
         });
       });
+    });
+  }
+
+  // 컨센서스 라인차트 (Chart.js)
+  function drawConsensusChart(canvas) {
+    const seriesRaw = canvas.dataset.series;
+    if (!seriesRaw) return;
+    let series;
+    try { series = JSON.parse(seriesRaw); } catch (e) { return; }
+    if (!series || series.length === 0) return;
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: series.map(p => p.date),
+        datasets: [{
+          data: series.map(p => p.value / 100_000_000),  // 원 → 억원 (Y축 가독성)
+          borderColor: '#111',
+          backgroundColor: 'rgba(0,0,0,0.04)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.15,
+          pointRadius: 2,
+          pointHoverRadius: 4,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => `${(ctx.parsed.y).toLocaleString()}억`,
+            },
+          },
+        },
+        scales: {
+          x: { ticks: { font: { size: 10 }, maxRotation: 0 } },
+          y: { ticks: { font: { size: 10 }, callback: v => v.toLocaleString() + '억' } },
+        },
+      },
     });
   }
 

@@ -33,6 +33,13 @@
     return Object.values(out);
   }
 
+  function fmtRet(r) {
+    if (r == null) return '';
+    const cls = r >= 0 ? 'change-up' : 'change-down';
+    const sign = r >= 0 ? '+' : '';
+    return `<span class="card-return ${cls}">${sign}${r.toFixed(2)}%</span>`;
+  }
+
   function renderCard(s) {
     const newBadge = s.issue_count_today > 0
       ? `<span class="card-new-dot" title="신규 ${s.issue_count_today}건"></span>`
@@ -42,6 +49,7 @@
       <a href="sectors/${escapeHtml(s.slug)}.html" class="card" data-name="${escapeHtml(dataName)}">
         <div class="card-path">${escapeHtml(s.wics_2nd)}</div>
         <div class="card-name">${escapeHtml(s.wics_3rd)}${newBadge}</div>
+        ${fmtRet(s.sector_return)}
         <div class="card-stats">
           <span class="stat">이슈 <strong>${s.issue_count_today}</strong>${s.issue_count_total > s.issue_count_today ? ` <span class="stat-sub">/ ${s.issue_count_total}</span>` : ''}</span>
           <span class="stat">종목 <strong>${s.stock_count}</strong></span>
