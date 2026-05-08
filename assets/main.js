@@ -50,9 +50,6 @@
         <div class="card-path">${escapeHtml(s.wics_2nd)}</div>
         <div class="card-name">${escapeHtml(s.wics_3rd)}${newBadge}</div>
         ${fmtRet(s.sector_return)}
-        <div class="card-stats">
-          <span class="stat">종목 <strong>${s.stock_count}</strong></span>
-        </div>
       </a>
     `;
   }

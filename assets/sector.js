@@ -36,6 +36,20 @@
   const fmtPriceUSD = (p) => p == null ? '-' : `$${p.toFixed(2)}`;
   const fmtPriceKRW = (p) => p == null ? '-' : new Intl.NumberFormat('ko-KR').format(p);
 
+  // USD 시가총액 → 조/억 표기 (원 안 붙임)
+  function fmtUSDCap(val) {
+    if (val == null) return '-';
+    const v = Math.abs(Number(val));
+    if (v >= 1_000_000_000_000) {
+      return `${(v / 1_000_000_000_000).toFixed(2)}T`;
+    } else if (v >= 1_000_000_000) {
+      return `${(v / 1_000_000_000).toFixed(1)}B`;
+    } else if (v >= 1_000_000) {
+      return `${(v / 1_000_000).toFixed(0)}M`;
+    }
+    return v.toLocaleString();
+  }
+
   // 거래대금/컨센서스 포맷: 원 → "1조 2,345억원" / 1억 미만 "0.12억원"
   function fmtKRW(val) {
     if (val == null || isNaN(val)) return '-';
@@ -102,7 +116,7 @@
   }
 
   // ─────────────────────────────────────────────
-  // 섹터 핵심 이슈 (뉴스)
+  // 섹터 핵심 뉴스 (뉴스)
   // ─────────────────────────────────────────────
   function sentimentTag(s) {
     if (s === 'positive') return '<span class="tag tag-positive">긍정</span>';
@@ -115,7 +129,7 @@
       return `
         <section class="block">
           <div class="block-header">
-            <h2 class="block-title">섹터 핵심 이슈</h2>
+            <h2 class="block-title">섹터 핵심 뉴스</h2>
             <span class="block-count">0건</span>
           </div>
           <div class="empty-state">오늘 보고할 핵심 뉴스가 없습니다.</div>
@@ -144,7 +158,7 @@
     return `
       <section class="block" id="news-block">
         <div class="block-header">
-          <h2 class="block-title">섹터 핵심 이슈</h2>
+          <h2 class="block-title">섹터 핵심 뉴스</h2>
           <span class="block-count" id="news-count">3 / ${total}건</span>
         </div>
         <ul class="news-list" id="news-list">${items}</ul>
@@ -182,12 +196,13 @@
             <span class="us-mover-toggle">▾</span>
           </summary>
           <div class="us-mover-detail">
-            <div class="us-mover-reason">${$h(m.reason)}</div>
+            ${(m.reason && m.reason !== '사유 미상') ? `<div class="us-mover-reason">변동사유: ${$h(m.reason)}</div>` : ''}
             ${(m.news_urls && m.news_urls.length) ? `
               <div class="us-mover-news">
                 ${m.news_urls.map(n => `<a href="${$h(n.url)}" target="_blank" rel="noopener" class="us-news-link">📰 ${$h(n.title || '관련 뉴스')}</a>`).join('')}
               </div>
             ` : ''}
+            ${m.market_cap != null ? `<div class="us-mover-cap">시총: $${fmtUSDCap(m.market_cap)}</div>` : ''}
             ${hasDesc ? `
               <div class="us-mover-desc-label">기업개요</div>
               <div class="us-mover-desc">${$h(m.description)}</div>
@@ -363,7 +378,7 @@
     const dataName = `${s.name} ${s.code}`.toLowerCase();
 
     return `
-      <details class="stock-card${s.has_new ? ' has-new' : ''}" data-name="${$h(dataName)}" data-code="${$h(s.code)}" data-change="${Math.abs(s.change_pct || 0)}">
+      <details class="stock-card${s.has_new ? ' has-new' : ''}" data-name="${$h(dataName)}" data-code="${$h(s.code)}" data-change="${Math.abs(s.change_pct || 0)}" data-cap="${s.market_cap || 0}">
         <summary class="stock-summary">
           <div class="stock-head">
             ${newDotHtml}
@@ -371,12 +386,12 @@
             <span class="stock-name">${$h(s.name)}</span>
           </div>
           ${priceHtml}
-          ${metaHtml}
           <div class="stock-counts">
             ${todayBadges.map(c => `<span class="badge">${$h(c)}</span>`).join('')}
           </div>
         </summary>
         <div class="stock-detail">
+          ${metaHtml}
           ${s.has_chart ? `
             <div class="detail-row">
               <h4 class="detail-label">📈 가격 차트</h4>
@@ -412,7 +427,7 @@
             <ul class="detail-list">${disclosureItems(s.disclosures)}</ul>
           </div>
           <div class="detail-row">
-            <h4 class="detail-label">💹 영업이익 컨센서스 변화 (최근 1개월, 단위: 억원)</h4>
+            <h4 class="detail-label">💹 영업이익 컨센서스 변화 (최근 1개월, 단위: 원)</h4>
             ${consensusBlock(s.consensus?.Q, s.consensus?.Y)}
           </div>
           <div class="detail-row">
@@ -444,9 +459,8 @@
           <div class="block-controls">
             <input type="text" class="block-search" id="stock-search" placeholder="종목 검색...">
             <select class="block-sort" id="stock-sort">
+              <option value="cap" selected>시가총액순</option>
               <option value="default">변동률순</option>
-              <option value="name">종목명순</option>
-              <option value="disclosure">공시 많은순</option>
             </select>
           </div>
         </div>
@@ -621,17 +635,15 @@
     function doSort() {
       const v = sort.value;
       const arr = [...cards];
-      if (v === 'name') {
-        arr.sort((a, b) => a.dataset.name.localeCompare(b.dataset.name, 'ko'));
-      } else if (v === 'disclosure') {
-        arr.sort((a, b) => (parseFloat(b.dataset.disclosure) || 0) - (parseFloat(a.dataset.disclosure) || 0));
+      if (v === 'cap') {
+        arr.sort((a, b) => (parseFloat(b.dataset.cap) || 0) - (parseFloat(a.dataset.cap) || 0));
       } else {
         // 변동률순 (|change_pct| 내림차순)
         arr.sort((a, b) => (parseFloat(b.dataset.change) || 0) - (parseFloat(a.dataset.change) || 0));
       }
       arr.forEach(c => list.appendChild(c));
     }
-    // 최초 로드 시도 변동률순 정렬 적용
+    // 최초 로드 시 디폴트(시총순) 적용
     doSort();
   }
 
@@ -748,6 +760,8 @@
 
       card.addEventListener('toggle', async () => {
         if (!card.open) return;
+        // details 열린 후 1프레임 대기 (canvas 크기 계산 보장)
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
         // 컨센 라인차트 그리기 (1회만)
         card.querySelectorAll('.cons-chart').forEach(cv => {
           if (cv.dataset.drawn === '1') return;
@@ -764,6 +778,10 @@
           } catch (e) {
             if (loadingDiv) loadingDiv.textContent = '차트 데이터 없음';
           }
+        } else if (canvas && loaded) {
+          // 이미 로드됐지만 resize 필요할 수 있음
+          const inst = chartInstances[code];
+          if (inst) inst.resize();
         }
       });
 
