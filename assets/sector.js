@@ -202,9 +202,9 @@
                 ${m.news_urls.map(n => `<a href="${$h(n.url)}" target="_blank" rel="noopener" class="us-news-link">📰 ${$h(n.title || '관련 뉴스')}</a>`).join('')}
               </div>
             ` : ''}
-            ${m.market_cap != null ? `<div class="us-mover-cap">시총: $${fmtUSDCap(m.market_cap)}</div>` : ''}
+            ${m.market_cap != null ? `<div class="us-mover-meta-row"><span class="us-meta-label">시총</span> <span class="us-meta-val">$${fmtUSDCap(m.market_cap)}</span></div>` : ''}
             ${hasDesc ? `
-              <div class="us-mover-desc-label">기업개요</div>
+              <div class="us-meta-label" style="margin-top:8px;">기업개요</div>
               <div class="us-mover-desc">${$h(m.description)}</div>
             ` : ''}
             ${(m.earnings && m.earnings.length) ? `
@@ -350,11 +350,11 @@
         capStr = `${(abs_v / 100_000_000).toFixed(2)}억원`;
       }
     }
-    const capHtml = capStr ? `시총:${capStr}` : '';
-    const peHtml = s.fwd_pe != null ? `fwd P/E:${s.fwd_pe.toFixed(1)}배` : '';
+    const capHtml = capStr ? `<span class="meta-kv"><span class="meta-k">시총</span><span class="meta-v">${capStr}</span></span>` : '';
+    const peHtml = s.fwd_pe != null ? `<span class="meta-kv"><span class="meta-k">fwd P/E</span><span class="meta-v">${s.fwd_pe.toFixed(1)}배</span></span>` : '';
     const metaParts = [capHtml, peHtml].filter(Boolean);
     const metaHtml = metaParts.length
-      ? `<div class="stock-meta-row">${metaParts.join(' | ')}</div>`
+      ? `<div class="detail-row stock-meta-detail-row">${metaParts.join('')}</div>`
       : '';
     const newDotHtml = s.has_new
       ? '<span class="card-new-dot" title="당일 신규 이슈"></span>'
@@ -798,55 +798,63 @@
     });
   }
 
-  // 컨센서스 라인차트 (Chart.js)
+  // 컨센서스 라인차트 — 순수 SVG (CDN 의존 없음)
   function drawConsensusChart(canvas) {
     const seriesRaw = canvas.dataset.series;
     if (!seriesRaw) return;
     let series;
     try { series = JSON.parse(seriesRaw); } catch (e) { return; }
-    if (!series || series.length === 0) return;
+    if (!series || series.length < 2) { canvas.style.display = 'none'; return; }
 
-    // canvas 크기 고정 (무한 확장 방지)
-    canvas.style.height = '120px';
-    canvas.style.maxHeight = '120px';
-    canvas.height = 120;
-    const parent = canvas.parentElement;
-    if (parent) { parent.style.height = '140px'; parent.style.maxHeight = '140px'; }
+    const wrapper = canvas.parentElement;
+    if (!wrapper) return;
+    const W = wrapper.clientWidth || 260;
+    const H = 110;
+    const pad = { t: 8, r: 8, b: 26, l: 50 };
 
-    const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: series.map(p => (p.date || '').slice(5)),  // MM-DD만
-        datasets: [{
-          data: series.map(p => p.value / 100_000_000),
-          borderColor: '#111',
-          backgroundColor: 'rgba(0,0,0,0.04)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.15,
-          pointRadius: series.length > 15 ? 0 : 2,
-          pointHoverRadius: 4,
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: { duration: 0 },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (ctx) => `${(ctx.parsed.y).toLocaleString()}억`,
-            },
-          },
-        },
-        scales: {
-          x: { ticks: { font: { size: 9 }, maxRotation: 0, maxTicksLimit: 6 } },
-          y: { ticks: { font: { size: 9 }, callback: v => v.toLocaleString() + '억' } },
-        },
-      },
-    });
+    const vals = series.map(p => p.value);
+    const minV = Math.min(...vals), maxV = Math.max(...vals);
+    const range = maxV - minV || 1;
+
+    const sx = i => pad.l + (i / (series.length - 1)) * (W - pad.l - pad.r);
+    const sy = v => pad.t + (1 - (v - minV) / range) * (H - pad.t - pad.b);
+
+    const fmtK = v => {
+      const a = Math.abs(v);
+      if (a >= 1e12) return `${(v/1e12).toFixed(1)}조`;
+      if (a >= 1e8)  return `${Math.round(v/1e8).toLocaleString()}억`;
+      return `${(v/1e8).toFixed(2)}억`;
+    };
+
+    const gridY = [0,1,2,3].map(i => minV + range*i/3);
+    const grids = gridY.map(v =>
+      `<line x1="${pad.l}" y1="${sy(v).toFixed(1)}" x2="${W-pad.r}" y2="${sy(v).toFixed(1)}" stroke="#e8e6e0" stroke-width="1"/>
+       <text x="${pad.l-4}" y="${(sy(v)+3.5).toFixed(1)}" text-anchor="end" font-size="9" fill="#999">${fmtK(v)}</text>`
+    ).join('');
+
+    const step = Math.max(1, Math.ceil(series.length / 5));
+    const xLabels = series.filter((_, i) => i % step === 0 || i === series.length-1).map(p => {
+      const i = series.indexOf(p);
+      return `<text x="${sx(i).toFixed(1)}" y="${H-5}" text-anchor="middle" font-size="9" fill="#999">${(p.date||'').slice(5,10)}</text>`;
+    }).join('');
+
+    const pts = series.map((p, i) => `${sx(i).toFixed(1)},${sy(p.value).toFixed(1)}`).join(' ');
+
+    // fill area
+    const firstX = sx(0).toFixed(1), lastX = sx(series.length-1).toFixed(1);
+    const baseY = (H - pad.b).toFixed(1);
+    const fillPts = `${firstX},${baseY} ${pts} ${lastX},${baseY}`;
+
+    const lx = sx(series.length-1), ly = sy(series[series.length-1].value);
+    const lastColor = series[series.length-1].value >= series[0].value ? '#c0392b' : '#1565c0';
+
+    wrapper.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;overflow:visible;">
+      ${grids}
+      <polygon points="${fillPts}" fill="rgba(0,0,0,0.04)"/>
+      <polyline points="${pts}" fill="none" stroke="#111" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3" fill="${lastColor}"/>
+      ${xLabels}
+    </svg>`;
   }
 
   // ─────────────────────────────────────────────

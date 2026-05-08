@@ -1443,3 +1443,64 @@ a.stock-news-title:hover { text-decoration: underline; }
   text-align: left;
 }
 .us-earnings-table tr:last-child td { border-bottom: none; }
+
+/* ============================================
+   v13 추가: meta-kv, us-mover-meta-row
+   ============================================ */
+/* 종목 시총/PE — detail 내부 */
+.stock-meta-detail-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 0 4px 0;
+  border-bottom: 1px dashed var(--line);
+  margin-bottom: 4px;
+}
+.meta-kv {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.meta-k {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+.meta-v {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* US mover meta row */
+.us-mover-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+.us-meta-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  padding: 1px 5px;
+}
+.us-meta-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
