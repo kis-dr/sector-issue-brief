@@ -936,6 +936,11 @@ ul { list-style: none; padding: 0; margin: 0; }
   color: var(--ink);
   margin-bottom: 8px;
   line-height: 1.5;
+  padding: 6px 10px;
+  background: #fffbe6;
+  border-left: 3px solid #f5c542;
+  border-radius: 2px;
+  font-weight: 600;
 }
 /* Empty state */
 .empty-state {
@@ -1374,6 +1379,12 @@ a.stock-news-title:hover { text-decoration: underline; }
 .cons-chart {
   width: 100%;
   height: 120px;
+  max-height: 120px;
+}
+/* Chart.js가 canvas를 wrapper 기준으로 resize하도록 */
+.cons-side {
+  position: relative;
+  overflow: hidden;
 }
 
 /* 독점 글로벌 리서치 카테고리 태그 */
@@ -1387,3 +1398,48 @@ a.stock-news-title:hover { text-decoration: underline; }
   color: #b87a00;
   margin-right: 4px;
 }
+/* stock meta tag (시총/PE 라인) */
+.stock-meta-row {
+  font-size: 11px;
+  color: #999;
+  font-family: var(--font-mono);
+  margin-left: 8px;
+  white-space: nowrap;
+}
+.stock-meta-tag {
+  color: #999;
+}
+
+/* US Earnings table */
+.us-earnings-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--ink-3);
+  margin: 10px 0 4px 0;
+}
+.us-earnings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.us-earnings-table th, .us-earnings-table td {
+  padding: 4px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--line);
+}
+.us-earnings-table th {
+  background: var(--bg);
+  font-weight: 700;
+  color: var(--ink-2);
+  font-size: 10px;
+}
+.us-earnings-table th:first-child, .us-earnings-table td:first-child {
+  text-align: left;
+}
+.us-earnings-table tr:last-child td { border-bottom: none; }

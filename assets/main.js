@@ -51,9 +51,7 @@
         <div class="card-name">${escapeHtml(s.wics_3rd)}${newBadge}</div>
         ${fmtRet(s.sector_return)}
         <div class="card-stats">
-          <span class="stat">이슈 <strong>${s.issue_count_today}</strong>${s.issue_count_total > s.issue_count_today ? ` <span class="stat-sub">/ ${s.issue_count_total}</span>` : ''}</span>
           <span class="stat">종목 <strong>${s.stock_count}</strong></span>
-          ${s.us_mover_count > 0 ? `<span class="stat">US <strong>${s.us_mover_count}</strong></span>` : ''}
         </div>
       </a>
     `;

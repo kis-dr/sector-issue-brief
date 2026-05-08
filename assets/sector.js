@@ -159,7 +159,7 @@
   }
 
   // ─────────────────────────────────────────────
-  // 미국 시장 동향 (관련) - 카드 클릭 시 기업개요 펼침, 디폴트 접기, 더보기 3건
+  // US peer 동향 - 카드 클릭 시 기업개요 펼침, 디폴트 접기, 더보기 3건
   // ─────────────────────────────────────────────
   function renderUSMovers(data) {
     const movers = data.us_movers || [];
@@ -182,7 +182,7 @@
             <span class="us-mover-toggle">▾</span>
           </summary>
           <div class="us-mover-detail">
-            <div class="us-mover-reason"><strong>변동 원인:</strong> ${$h(m.reason)}</div>
+            <div class="us-mover-reason">${$h(m.reason)}</div>
             ${(m.news_urls && m.news_urls.length) ? `
               <div class="us-mover-news">
                 ${m.news_urls.map(n => `<a href="${$h(n.url)}" target="_blank" rel="noopener" class="us-news-link">📰 ${$h(n.title || '관련 뉴스')}</a>`).join('')}
@@ -192,6 +192,25 @@
               <div class="us-mover-desc-label">기업개요</div>
               <div class="us-mover-desc">${$h(m.description)}</div>
             ` : ''}
+            ${(m.earnings && m.earnings.length) ? `
+              <div class="us-earnings-label">실적 (EPS)</div>
+              <table class="us-earnings-table">
+                <thead><tr><th>발표일</th><th>추정</th><th>실적</th><th>서프라이즈</th></tr></thead>
+                <tbody>
+                  ${m.earnings.map(e => {
+                    const surp = e.surprise_pct != null
+                      ? `<span class="${e.surprise_pct >= 0 ? 'change-up' : 'change-down'}">${e.surprise_pct >= 0 ? '+' : ''}${e.surprise_pct.toFixed(2)}%</span>`
+                      : '-';
+                    return `<tr>
+                      <td>${e.date || '-'}</td>
+                      <td>${e.eps_est != null ? '$'+e.eps_est.toFixed(2) : '-'}</td>
+                      <td>${e.eps_actual != null ? '$'+e.eps_actual.toFixed(2) : '-'}</td>
+                      <td>${surp}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            ` : ''}
           </div>
         </details>
       `;
@@ -200,7 +219,7 @@
     return `
       <section class="block" id="us-movers-block">
         <div class="block-header">
-          <h2 class="block-title">미국 시장 동향 (관련)</h2>
+          <h2 class="block-title">US peer 동향</h2>
           <span class="block-count" id="us-movers-count">3 / ${total}건</span>
         </div>
         <div class="us-movers-list" id="us-movers-list">${items}</div>
@@ -285,7 +304,9 @@
           ${newDot}<span class="cons-period-label">${$h(period)}</span>
           <span class="cons-latest">: ${latest}</span>
         </div>
-        <canvas class="cons-chart" data-series='${JSON.stringify(c.series)}'></canvas>
+        <div style="position:relative;height:120px;width:100%;overflow:hidden;">
+          <canvas class="cons-chart" data-series='${JSON.stringify(c.series)}'></canvas>
+        </div>
       </div>
     `;
   }
@@ -299,11 +320,26 @@
   }
 
   function renderStock(s, idx) {
-    const capHtml = s.market_cap != null
-      ? `<span class="market-cap">${fmtKRW(s.market_cap)}</span>`
-      : '';
-    const peHtml = s.fwd_pe != null
-      ? `<span class="fwd-pe">PE ${s.fwd_pe.toFixed(1)}</span>`
+    // 시총 표기: 100조+ → 100조원, 1~100조 → 1.23조원, <1조 → 9,899억원
+    let capStr = '';
+    if (s.market_cap != null) {
+      const v = Number(s.market_cap);
+      const abs_v = Math.abs(v);
+      if (abs_v >= 100_000_000_000_000) {
+        capStr = `${Math.round(abs_v / 1_000_000_000_000)}조원`;
+      } else if (abs_v >= 1_000_000_000_000) {
+        capStr = `${(abs_v / 1_000_000_000_000).toFixed(2)}조원`;
+      } else if (abs_v >= 100_000_000) {
+        capStr = `${Math.round(abs_v / 100_000_000).toLocaleString()}억원`;
+      } else if (abs_v > 0) {
+        capStr = `${(abs_v / 100_000_000).toFixed(2)}억원`;
+      }
+    }
+    const capHtml = capStr ? `시총:${capStr}` : '';
+    const peHtml = s.fwd_pe != null ? `fwd P/E:${s.fwd_pe.toFixed(1)}배` : '';
+    const metaParts = [capHtml, peHtml].filter(Boolean);
+    const metaHtml = metaParts.length
+      ? `<div class="stock-meta-row">${metaParts.join(' | ')}</div>`
       : '';
     const newDotHtml = s.has_new
       ? '<span class="card-new-dot" title="당일 신규 이슈"></span>'
@@ -312,26 +348,22 @@
       ? `<div class="stock-price">
            <span class="price-num">${fmtPriceKRW(s.price)}</span>
            ${fmtChange(s.change_pct)}
-           ${capHtml}
-           ${peHtml}
          </div>`
-      : `<div class="stock-price">
-           <span class="price-num">-</span>
-           ${capHtml}
-           ${peHtml}
-         </div>`;
+      : `<div class="stock-price"><span class="price-num">-</span></div>`;
 
-    const counts = [
-      `뉴스 ${(s.news || []).length}`,
-      `공시 ${(s.disclosures || []).length}`,
-      `컨센 ${((s.consensus?.Q || []).length + (s.consensus?.Y || []).length)}`,
-      `리포트 ${(s.reports || []).length}`,
-    ];
+    // 당일 신규 항목만 표시 (숫자 없이 텍스트만)
+    const todayBadges = [];
+    if ((s.news || []).some(n => n.is_new)) todayBadges.push('뉴스');
+    if ((s.disclosures || []).some(d => d.is_new)) todayBadges.push('공시');
+    const cy = s.consensus?.Y || {};
+    const cq = s.consensus?.Q || {};
+    if ((typeof cy === 'object' && cy.is_new) || (typeof cq === 'object' && cq.is_new)) todayBadges.push('컨센');
+    if ((s.reports || []).some(r => r.is_new)) todayBadges.push('리포트');
 
     const dataName = `${s.name} ${s.code}`.toLowerCase();
 
     return `
-      <details class="stock-card${s.has_new ? ' has-new' : ''}" data-name="${$h(dataName)}" data-code="${$h(s.code)}" data-disclosure="${(s.disclosures || []).length}">
+      <details class="stock-card${s.has_new ? ' has-new' : ''}" data-name="${$h(dataName)}" data-code="${$h(s.code)}" data-change="${Math.abs(s.change_pct || 0)}">
         <summary class="stock-summary">
           <div class="stock-head">
             ${newDotHtml}
@@ -339,8 +371,9 @@
             <span class="stock-name">${$h(s.name)}</span>
           </div>
           ${priceHtml}
+          ${metaHtml}
           <div class="stock-counts">
-            ${counts.map(c => `<span class="badge">${$h(c)}</span>`).join('')}
+            ${todayBadges.map(c => `<span class="badge">${$h(c)}</span>`).join('')}
           </div>
         </summary>
         <div class="stock-detail">
@@ -432,7 +465,7 @@
     document.title = `${data.wics_3rd} - 섹터별 이슈 브리핑`;
 
     const sectorReturnHtml = data.sector_return != null
-      ? `<div class="sector-return-badge">섹터 등락률 ${fmtChange(data.sector_return)} <span class="sr-note">시총가중평균</span></div>`
+      ? `<div class="sector-return-badge">${fmtChange(data.sector_return)}</div>`
       : '';
 
     const breadcrumb = `
@@ -489,8 +522,8 @@
         <li class="news-item">
           <div class="news-meta">
             ${cat}
-            <span class="news-date">${fmtDate(r.published_at)}</span>
-            <span class="news-source">${$h(r.publisher)}</span>
+            ${r.published_at ? `<span class="news-date">${fmtDate(r.published_at)}</span>` : ''}
+            ${r.publisher ? `<span class="news-source">${$h(r.publisher)}</span>` : ''}
           </div>
           ${titleHtml}
           ${summary}
@@ -584,19 +617,22 @@
       });
     });
 
-    sort.addEventListener('change', (e) => {
-      const v = e.target.value;
+    sort.addEventListener('change', doSort);
+    function doSort() {
+      const v = sort.value;
       const arr = [...cards];
       if (v === 'name') {
         arr.sort((a, b) => a.dataset.name.localeCompare(b.dataset.name, 'ko'));
       } else if (v === 'disclosure') {
-        arr.sort((a, b) => parseInt(b.dataset.disclosure) - parseInt(a.dataset.disclosure));
+        arr.sort((a, b) => (parseFloat(b.dataset.disclosure) || 0) - (parseFloat(a.dataset.disclosure) || 0));
       } else {
-        // default - 원래 순서 (변동률순, 서버에서 이미 정렬됨)
-        return;
+        // 변동률순 (|change_pct| 내림차순)
+        arr.sort((a, b) => (parseFloat(b.dataset.change) || 0) - (parseFloat(a.dataset.change) || 0));
       }
       arr.forEach(c => list.appendChild(c));
-    });
+    }
+    // 최초 로드 시도 변동률순 정렬 적용
+    doSort();
   }
 
   // ─────────────────────────────────────────────
@@ -751,25 +787,34 @@
     let series;
     try { series = JSON.parse(seriesRaw); } catch (e) { return; }
     if (!series || series.length === 0) return;
+
+    // canvas 크기 고정 (무한 확장 방지)
+    canvas.style.height = '120px';
+    canvas.style.maxHeight = '120px';
+    canvas.height = 120;
+    const parent = canvas.parentElement;
+    if (parent) { parent.style.height = '140px'; parent.style.maxHeight = '140px'; }
+
     const ctx = canvas.getContext('2d');
     new Chart(ctx, {
       type: 'line',
       data: {
-        labels: series.map(p => p.date),
+        labels: series.map(p => (p.date || '').slice(5)),  // MM-DD만
         datasets: [{
-          data: series.map(p => p.value / 100_000_000),  // 원 → 억원 (Y축 가독성)
+          data: series.map(p => p.value / 100_000_000),
           borderColor: '#111',
           backgroundColor: 'rgba(0,0,0,0.04)',
           borderWidth: 2,
           fill: true,
           tension: 0.15,
-          pointRadius: 2,
+          pointRadius: series.length > 15 ? 0 : 2,
           pointHoverRadius: 4,
         }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: { duration: 0 },
         plugins: {
           legend: { display: false },
           tooltip: {
@@ -779,8 +824,8 @@
           },
         },
         scales: {
-          x: { ticks: { font: { size: 10 }, maxRotation: 0 } },
-          y: { ticks: { font: { size: 10 }, callback: v => v.toLocaleString() + '억' } },
+          x: { ticks: { font: { size: 9 }, maxRotation: 0, maxTicksLimit: 6 } },
+          y: { ticks: { font: { size: 9 }, callback: v => v.toLocaleString() + '억' } },
         },
       },
     });
