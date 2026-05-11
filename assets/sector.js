@@ -188,7 +188,7 @@
       return `
         <details class="us-mover-card" data-idx="${idx}">
           <summary class="us-mover-summary">
-            <span class="ticker">${$h(m.ticker)}-US</span>
+            <span class="ticker">${$h(m.ticker)}</span>
             <span class="us-name">${$h(m.name)}</span>
             <span class="us-price">${fmtPriceUSD(m.price)}</span>
             ${fmtChange(m.change_pct)}
@@ -202,11 +202,11 @@
                 ${m.news_urls.map(n => `<a href="${$h(n.url)}" target="_blank" rel="noopener" class="us-news-link">📰 ${$h(n.title || '관련 뉴스')}</a>`).join('')}
               </div>
             ` : ''}
-            ${m.market_cap != null ? `<div class="us-mover-meta-row"><span class="us-meta-label">시총</span> <span class="us-meta-val">$${fmtUSDCap(m.market_cap)}</span></div>` : ''}
-            ${hasDesc ? `
-              <div class="us-meta-label" style="margin-top:8px;">기업개요</div>
-              <div class="us-mover-desc">${$h(m.description)}</div>
-            ` : ''}
+            <div class="us-mover-meta-grid">
+              ${m.market_cap != null ? `<span class="meta-kv"><span class="meta-k">시총</span><span class="meta-v">$${fmtUSDCap(m.market_cap)}</span></span>` : ''}
+              ${m.fwd_pe != null ? `<span class="meta-kv"><span class="meta-k">fwd P/E</span><span class="meta-v">${m.fwd_pe.toFixed(1)}배</span></span>` : ''}
+              ${m.fwd_pb != null ? `<span class="meta-kv"><span class="meta-k">fwd P/B</span><span class="meta-v">${m.fwd_pb.toFixed(2)}배</span></span>` : ''}
+            </div>
             ${(m.earnings && m.earnings.length) ? `
               <div class="us-earnings-label">실적 (EPS)</div>
               <table class="us-earnings-table">
@@ -225,6 +225,10 @@
                   }).join('')}
                 </tbody>
               </table>
+            ` : ''}
+            ${hasDesc ? `
+              <div class="us-meta-label" style="margin-top:10px;">기업개요</div>
+              <div class="us-mover-desc">${$h(m.description)}</div>
             ` : ''}
           </div>
         </details>
@@ -352,7 +356,8 @@
     }
     const capHtml = capStr ? `<span class="meta-kv"><span class="meta-k">시총</span><span class="meta-v">${capStr}</span></span>` : '';
     const peHtml = s.fwd_pe != null ? `<span class="meta-kv"><span class="meta-k">fwd P/E</span><span class="meta-v">${s.fwd_pe.toFixed(1)}배</span></span>` : '';
-    const metaParts = [capHtml, peHtml].filter(Boolean);
+    const pbHtml = s.fwd_pb != null ? `<span class="meta-kv"><span class="meta-k">fwd P/B</span><span class="meta-v">${s.fwd_pb.toFixed(2)}배</span></span>` : '';
+    const metaParts = [capHtml, peHtml, pbHtml].filter(Boolean);
     const metaHtml = metaParts.length
       ? `<div class="detail-row stock-meta-detail-row">${metaParts.join('')}</div>`
       : '';
@@ -392,6 +397,24 @@
         </summary>
         <div class="stock-detail">
           ${metaHtml}
+          ${(s.news && s.news.length > 0) ? `
+            <div class="detail-row">
+              <h4 class="detail-label">📰 종목 뉴스 (어제자, 핵심 ${s.news.length}건)</h4>
+              <ul class="stock-news-list">${stockNewsItems(s.news)}</ul>
+            </div>
+          ` : ''}
+          <div class="detail-row">
+            <h4 class="detail-label">📄 공시 (7일)</h4>
+            <ul class="detail-list">${disclosureItems(s.disclosures)}</ul>
+          </div>
+          <div class="detail-row">
+            <h4 class="detail-label">💹 영업이익 컨센서스 변화 (최근 1개월, 단위: 원)</h4>
+            ${consensusBlock(s.consensus?.Q, s.consensus?.Y)}
+          </div>
+          <div class="detail-row">
+            <h4 class="detail-label">📑 타사 리포트 (7일)</h4>
+            <ul class="detail-list">${reportItems(s.reports)}</ul>
+          </div>
           ${s.has_chart ? `
             <div class="detail-row">
               <h4 class="detail-label">📈 가격 차트</h4>
@@ -416,24 +439,6 @@
               ${flowTable(s.stk_flow)}
             </div>
           ` : ''}
-          ${(s.news && s.news.length > 0) ? `
-            <div class="detail-row">
-              <h4 class="detail-label">📰 종목 뉴스 (어제자, 핵심 ${s.news.length}건)</h4>
-              <ul class="stock-news-list">${stockNewsItems(s.news)}</ul>
-            </div>
-          ` : ''}
-          <div class="detail-row">
-            <h4 class="detail-label">📄 공시 (7일)</h4>
-            <ul class="detail-list">${disclosureItems(s.disclosures)}</ul>
-          </div>
-          <div class="detail-row">
-            <h4 class="detail-label">💹 영업이익 컨센서스 변화 (최근 1개월, 단위: 원)</h4>
-            ${consensusBlock(s.consensus?.Q, s.consensus?.Y)}
-          </div>
-          <div class="detail-row">
-            <h4 class="detail-label">📑 타사 리포트 (7일)</h4>
-            <ul class="detail-list">${reportItems(s.reports)}</ul>
-          </div>
         </div>
       </details>
     `;
@@ -810,7 +815,7 @@
     if (!wrapper) return;
     const W = wrapper.clientWidth || 260;
     const H = 110;
-    const pad = { t: 8, r: 8, b: 26, l: 50 };
+    const pad = { t: 8, r: 28, b: 26, l: 50 };
 
     const vals = series.map(p => p.value);
     const minV = Math.min(...vals), maxV = Math.max(...vals);
