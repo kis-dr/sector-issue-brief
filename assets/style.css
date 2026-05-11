@@ -1452,9 +1452,9 @@ a.stock-news-title:hover { text-decoration: underline; }
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 10px 0 4px 0;
+  padding: 10px 0 12px 0;
   border-bottom: 1px dashed var(--line);
-  margin-bottom: 4px;
+  margin-bottom: 14px;
 }
 .meta-kv {
   display: flex;
@@ -1663,3 +1663,22 @@ a.stock-news-title:hover { text-decoration: underline; }
   .mkt-charts-grid { grid-template-columns: 1fr; }
   .mkt-tables-wrap { grid-template-columns: 1fr; }
 }
+
+/* ── 시장데이터: 전일대비 카드 (v17) ── */
+.mkt-cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.mkt-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.mkt-card[open] { border-color: var(--ink-3); }
+.mkt-card-summary { display: flex; flex-direction: column; padding: 10px 14px; cursor: pointer; list-style: none; }
+.mkt-card-summary::-webkit-details-marker { display: none; }
+.mkt-card-title { font-size: 11px; font-weight: 700; color: var(--ink-2); letter-spacing: 0.02em; margin-bottom: 4px; }
+.mkt-card-row { display: flex; align-items: baseline; gap: 6px; }
+.mkt-card-val { font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: var(--ink); }
+.mkt-card-unit { font-size: 10px; color: var(--ink-3); }
+.mkt-card-chg { font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
+.mkt-up .mkt-card-chg { color: var(--up); }
+.mkt-down .mkt-card-chg { color: var(--down); }
+.mkt-up .mkt-card-val { color: var(--up); }
+.mkt-down .mkt-card-val { color: var(--down); }
+.mkt-card-sub { font-size: 10px; color: var(--ink-3); margin-top: 2px; font-family: var(--font-mono); }
+.mkt-card-detail { padding: 0 14px 14px; min-height: 100px; }
+@media (max-width: 640px) { .mkt-cards-grid { grid-template-columns: repeat(2, 1fr); } }

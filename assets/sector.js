@@ -116,7 +116,7 @@
   }
 
   // ─────────────────────────────────────────────
-  // 시장 데이터 (라인차트 + 메모리 테이블)
+  // 시장 데이터 (전일대비 카드 + 펼치면 1개월 라인차트)
   // ─────────────────────────────────────────────
   function renderMarketData(data) {
     const md = data.market_data;
@@ -125,111 +125,80 @@
     const tables = md.tables || [];
     if (charts.length === 0 && tables.length === 0) return '';
 
-    // 차트들 (2열 그리드)
-    const chartHtml = charts.map(c => {
-      const series = c.series || [];
-      if (series.length < 2) return '';
-      const key = c.key || 'close';
-      const seriesJson = JSON.stringify(series.map(p => ({d: p.date, v: p[key]})));
+    const chartCards = charts.map(c => {
+      const isUp = c.chg_pct >= 0;
+      const cls = isUp ? 'mkt-up' : 'mkt-down';
+      const sign = isUp ? '+' : '';
+      const arrow = isUp ? '▲' : '▼';
       return `
-        <div class="mkt-chart-card">
-          <div class="mkt-chart-title">${$h(c.title)} <span class="mkt-chart-unit">${$h(c.unit || '')}</span></div>
-          <div class="mkt-chart-wrap" data-mkt-series='${seriesJson}'></div>
-        </div>
+        <details class="mkt-card ${cls}">
+          <summary class="mkt-card-summary">
+            <div class="mkt-card-title">${$h(c.title)}</div>
+            <div class="mkt-card-row">
+              <span class="mkt-card-val">${c.last_val.toLocaleString()}</span>
+              <span class="mkt-card-unit">${$h(c.unit)}</span>
+              <span class="mkt-card-chg">${arrow} ${sign}${c.chg_pct.toFixed(2)}%</span>
+            </div>
+            <div class="mkt-card-sub">전일 ${c.prev_val.toLocaleString()} → ${c.last_val.toLocaleString()} (${sign}${c.chg.toLocaleString()})</div>
+          </summary>
+          <div class="mkt-card-detail" data-mkt-series='${JSON.stringify(c.series)}'></div>
+        </details>
       `;
-    }).filter(Boolean).join('');
+    }).join('');
 
-    // 테이블들 (메모리 SPOT)
     const tableHtml = tables.map(t => {
-      const cats = t.categories || [];
-      return cats.map(cat => {
+      return (t.categories || []).map(cat => {
         const rows = (cat.items || []).map(it => {
           const chg = it.change || '';
-          const isNeg = chg.includes('-');
-          const cls = isNeg ? 'change-down' : (chg.includes('+') || (!isNeg && parseFloat(chg) > 0)) ? 'change-up' : '';
-          return `<tr>
-            <td class="mkt-td-item">${$h(it.name)}</td>
-            <td class="mkt-td-num">${$h(it.avg)}</td>
-            <td class="mkt-td-num ${cls}">${$h(chg)}</td>
-          </tr>`;
+          const neg = chg.includes('-');
+          const cls = neg ? 'change-down' : (parseFloat(chg) > 0 ? 'change-up' : '');
+          return `<tr><td class="mkt-td-item">${$h(it.name)}</td><td class="mkt-td-num">${$h(it.avg)}</td><td class="mkt-td-num ${cls}">${$h(chg)}</td></tr>`;
         }).join('');
-        return `
-          <div class="mkt-table-card">
-            <div class="mkt-table-title">${$h(cat.category)} <span class="mkt-table-update">${$h(cat.last_update)}</span></div>
-            <table class="mkt-table">
-              <thead><tr><th>Item</th><th>Avg ($)</th><th>Change</th></tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>
-        `;
+        return `<div class="mkt-table-card"><div class="mkt-table-title">${$h(cat.category)} <span class="mkt-table-update">${$h(cat.last_update)}</span></div><table class="mkt-table"><thead><tr><th>Item</th><th>Avg ($)</th><th>Change</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
     }).join('');
 
     return `
       <section class="block">
-        <div class="block-header">
-          <h2 class="block-title">📊 시장 데이터</h2>
-        </div>
-        ${chartHtml ? `<div class="mkt-charts-grid">${chartHtml}</div>` : ''}
+        <div class="block-header"><h2 class="block-title">📊 시장 데이터</h2></div>
+        ${chartCards ? `<div class="mkt-cards-grid">${chartCards}</div>` : ''}
         ${tableHtml ? `<div class="mkt-tables-wrap">${tableHtml}</div>` : ''}
       </section>
     `;
   }
 
-  // ─────────────────────────────────────────────
-  // 시장 데이터 SVG 차트 바인딩
-  // ─────────────────────────────────────────────
   function bindMarketCharts() {
-    document.querySelectorAll('.mkt-chart-wrap').forEach(wrap => {
-      const raw = wrap.dataset.mktSeries;
-      if (!raw) return;
-      let series;
-      try { series = JSON.parse(raw); } catch (e) { return; }
-      if (!series || series.length < 2) return;
-
-      const W = wrap.clientWidth || 200;
-      const H = 80;
-      const pad = {t: 6, r: 20, b: 20, l: 40};
-      const vals = series.map(p => p.v);
-      const minV = Math.min(...vals), maxV = Math.max(...vals);
-      const range = maxV - minV || 1;
-      const sx = i => pad.l + (i / (series.length - 1)) * (W - pad.l - pad.r);
-      const sy = v => pad.t + (1 - (v - minV) / range) * (H - pad.t - pad.b);
-
-      const gridY = [0,1,2].map(i => minV + range*i/2);
-      const grids = gridY.map(v =>
-        `<line x1="${pad.l}" y1="${sy(v).toFixed(1)}" x2="${W-pad.r}" y2="${sy(v).toFixed(1)}" stroke="#e8e6e0" stroke-width="1"/>
-         <text x="${pad.l-3}" y="${(sy(v)+3).toFixed(1)}" text-anchor="end" font-size="8" fill="#999">${v >= 1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(1)}</text>`
-      ).join('');
-
-      const xLabels = series.filter((_, i) => i === 0 || i === series.length - 1)
-        .map(p => {
-          const i = series.indexOf(p);
-          return `<text x="${sx(i).toFixed(1)}" y="${H-3}" text-anchor="middle" font-size="8" fill="#999">${(p.d||'').slice(5)}</text>`;
-        }).join('');
-
-      const pts = series.map((p, i) => `${sx(i).toFixed(1)},${sy(p.v).toFixed(1)}`).join(' ');
-      const lastColor = vals[vals.length-1] >= vals[0] ? '#c0392b' : '#1565c0';
-      const lx = sx(series.length-1), ly = sy(vals[vals.length-1]);
-      // 최근값 + 변동률
-      const lastVal = vals[vals.length-1];
-      const firstVal = vals[0];
-      const chgPct = ((lastVal - firstVal) / firstVal * 100).toFixed(1);
-      const chgSign = lastVal >= firstVal ? '+' : '';
-
-      wrap.innerHTML = `
-        <div class="mkt-chart-latest">
-          <span class="mkt-chart-val">${lastVal >= 1000 ? lastVal.toLocaleString() : lastVal.toFixed(2)}</span>
-          <span class="mkt-chart-chg" style="color:${lastColor}">${chgSign}${chgPct}%</span>
-        </div>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">
-          ${grids}
-          <polyline points="${pts}" fill="none" stroke="${lastColor}" stroke-width="1.5" stroke-linejoin="round"/>
-          <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.5" fill="${lastColor}"/>
-          ${xLabels}
-        </svg>
-      `;
+    document.querySelectorAll('.mkt-card').forEach(card => {
+      card.addEventListener('toggle', () => {
+        if (!card.open) return;
+        const wrap = card.querySelector('.mkt-card-detail');
+        if (!wrap || wrap.dataset.drawn === '1') return;
+        wrap.dataset.drawn = '1';
+        requestAnimationFrame(() => requestAnimationFrame(() => drawMktSVG(wrap)));
+      });
     });
+  }
+
+  function drawMktSVG(wrap) {
+    let series;
+    try { series = JSON.parse(wrap.dataset.mktSeries); } catch (e) { return; }
+    if (!series || series.length < 2) return;
+    const W = wrap.clientWidth || 260, H = 100;
+    const pad = {t:8,r:24,b:22,l:44};
+    const vals = series.map(p=>p.v);
+    const minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV-minV||1;
+    const sx = i => pad.l+(i/(series.length-1))*(W-pad.l-pad.r);
+    const sy = v => pad.t+(1-(v-minV)/range)*(H-pad.t-pad.b);
+    const gridY = [0,1,2,3].map(i=>minV+range*i/3);
+    const grids = gridY.map(v=>`<line x1="${pad.l}" y1="${sy(v).toFixed(1)}" x2="${W-pad.r}" y2="${sy(v).toFixed(1)}" stroke="#e8e6e0" stroke-width="1"/><text x="${pad.l-3}" y="${(sy(v)+3).toFixed(1)}" text-anchor="end" font-size="8" fill="#999">${v>=10000?(v/1000).toFixed(0)+'k':v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(1)}</text>`).join('');
+    const step = Math.max(1, Math.ceil(series.length/6));
+    const xLbl = series.filter((_,i)=>i%step===0||i===series.length-1).map(p=>{
+      const i=series.indexOf(p); return `<text x="${sx(i).toFixed(1)}" y="${H-4}" text-anchor="middle" font-size="8" fill="#999">${(p.d||'').slice(5)}</text>`;
+    }).join('');
+    const pts = series.map((p,i)=>`${sx(i).toFixed(1)},${sy(p.v).toFixed(1)}`).join(' ');
+    const color = vals[vals.length-1]>=vals[0] ? '#c0392b' : '#1565c0';
+    const lx=sx(series.length-1),ly=sy(vals[vals.length-1]);
+    wrap.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;margin-top:8px;"><polygon points="${sx(0).toFixed(1)},${(H-pad.b).toFixed(1)} ${pts} ${sx(series.length-1).toFixed(1)},${(H-pad.b).toFixed(1)}" fill="rgba(0,0,0,0.03)"/>${grids}<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/><circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.5" fill="${color}"/>${xLbl}</svg>`;
   }
 
   // ─────────────────────────────────────────────
@@ -255,7 +224,7 @@
     }
     const total = news.length;
     const items = news.map((n, idx) => {
-      const kwTag = n.keyword ? `<span class="news-kw-tag">${$h(n.keyword)}</span>` : '';
+      const kwTag = n.keyword ? `<span class="news-kw-tag">#${$h(n.keyword)}</span>` : '';
       const summaryBox = n.summary
         ? `<details class="news-summary-toggle"><summary class="news-summary-btn">요약 보기</summary><div class="news-summary-box">${$h(n.summary)}</div></details>`
         : '';
