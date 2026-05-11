@@ -116,6 +116,123 @@
   }
 
   // ─────────────────────────────────────────────
+  // 시장 데이터 (라인차트 + 메모리 테이블)
+  // ─────────────────────────────────────────────
+  function renderMarketData(data) {
+    const md = data.market_data;
+    if (!md) return '';
+    const charts = md.charts || [];
+    const tables = md.tables || [];
+    if (charts.length === 0 && tables.length === 0) return '';
+
+    // 차트들 (2열 그리드)
+    const chartHtml = charts.map(c => {
+      const series = c.series || [];
+      if (series.length < 2) return '';
+      const key = c.key || 'close';
+      const seriesJson = JSON.stringify(series.map(p => ({d: p.date, v: p[key]})));
+      return `
+        <div class="mkt-chart-card">
+          <div class="mkt-chart-title">${$h(c.title)} <span class="mkt-chart-unit">${$h(c.unit || '')}</span></div>
+          <div class="mkt-chart-wrap" data-mkt-series='${seriesJson}'></div>
+        </div>
+      `;
+    }).filter(Boolean).join('');
+
+    // 테이블들 (메모리 SPOT)
+    const tableHtml = tables.map(t => {
+      const cats = t.categories || [];
+      return cats.map(cat => {
+        const rows = (cat.items || []).map(it => {
+          const chg = it.change || '';
+          const isNeg = chg.includes('-');
+          const cls = isNeg ? 'change-down' : (chg.includes('+') || (!isNeg && parseFloat(chg) > 0)) ? 'change-up' : '';
+          return `<tr>
+            <td class="mkt-td-item">${$h(it.name)}</td>
+            <td class="mkt-td-num">${$h(it.avg)}</td>
+            <td class="mkt-td-num ${cls}">${$h(chg)}</td>
+          </tr>`;
+        }).join('');
+        return `
+          <div class="mkt-table-card">
+            <div class="mkt-table-title">${$h(cat.category)} <span class="mkt-table-update">${$h(cat.last_update)}</span></div>
+            <table class="mkt-table">
+              <thead><tr><th>Item</th><th>Avg ($)</th><th>Change</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
+      }).join('');
+    }).join('');
+
+    return `
+      <section class="block">
+        <div class="block-header">
+          <h2 class="block-title">📊 시장 데이터</h2>
+        </div>
+        ${chartHtml ? `<div class="mkt-charts-grid">${chartHtml}</div>` : ''}
+        ${tableHtml ? `<div class="mkt-tables-wrap">${tableHtml}</div>` : ''}
+      </section>
+    `;
+  }
+
+  // ─────────────────────────────────────────────
+  // 시장 데이터 SVG 차트 바인딩
+  // ─────────────────────────────────────────────
+  function bindMarketCharts() {
+    document.querySelectorAll('.mkt-chart-wrap').forEach(wrap => {
+      const raw = wrap.dataset.mktSeries;
+      if (!raw) return;
+      let series;
+      try { series = JSON.parse(raw); } catch (e) { return; }
+      if (!series || series.length < 2) return;
+
+      const W = wrap.clientWidth || 200;
+      const H = 80;
+      const pad = {t: 6, r: 20, b: 20, l: 40};
+      const vals = series.map(p => p.v);
+      const minV = Math.min(...vals), maxV = Math.max(...vals);
+      const range = maxV - minV || 1;
+      const sx = i => pad.l + (i / (series.length - 1)) * (W - pad.l - pad.r);
+      const sy = v => pad.t + (1 - (v - minV) / range) * (H - pad.t - pad.b);
+
+      const gridY = [0,1,2].map(i => minV + range*i/2);
+      const grids = gridY.map(v =>
+        `<line x1="${pad.l}" y1="${sy(v).toFixed(1)}" x2="${W-pad.r}" y2="${sy(v).toFixed(1)}" stroke="#e8e6e0" stroke-width="1"/>
+         <text x="${pad.l-3}" y="${(sy(v)+3).toFixed(1)}" text-anchor="end" font-size="8" fill="#999">${v >= 1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(1)}</text>`
+      ).join('');
+
+      const xLabels = series.filter((_, i) => i === 0 || i === series.length - 1)
+        .map(p => {
+          const i = series.indexOf(p);
+          return `<text x="${sx(i).toFixed(1)}" y="${H-3}" text-anchor="middle" font-size="8" fill="#999">${(p.d||'').slice(5)}</text>`;
+        }).join('');
+
+      const pts = series.map((p, i) => `${sx(i).toFixed(1)},${sy(p.v).toFixed(1)}`).join(' ');
+      const lastColor = vals[vals.length-1] >= vals[0] ? '#c0392b' : '#1565c0';
+      const lx = sx(series.length-1), ly = sy(vals[vals.length-1]);
+      // 최근값 + 변동률
+      const lastVal = vals[vals.length-1];
+      const firstVal = vals[0];
+      const chgPct = ((lastVal - firstVal) / firstVal * 100).toFixed(1);
+      const chgSign = lastVal >= firstVal ? '+' : '';
+
+      wrap.innerHTML = `
+        <div class="mkt-chart-latest">
+          <span class="mkt-chart-val">${lastVal >= 1000 ? lastVal.toLocaleString() : lastVal.toFixed(2)}</span>
+          <span class="mkt-chart-chg" style="color:${lastColor}">${chgSign}${chgPct}%</span>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">
+          ${grids}
+          <polyline points="${pts}" fill="none" stroke="${lastColor}" stroke-width="1.5" stroke-linejoin="round"/>
+          <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.5" fill="${lastColor}"/>
+          ${xLabels}
+        </svg>
+      `;
+    });
+  }
+
+  // ─────────────────────────────────────────────
   // 섹터 핵심 뉴스 (뉴스)
   // ─────────────────────────────────────────────
   function sentimentTag(s) {
@@ -159,12 +276,12 @@
       <section class="block" id="news-block">
         <div class="block-header">
           <h2 class="block-title">섹터 핵심 뉴스</h2>
-          <span class="block-count" id="news-count">3 / ${total}건</span>
+          <span class="block-count" id="news-count"></span>
         </div>
         <ul class="news-list" id="news-list">${items}</ul>
         ${total > 3 ? `
           <button class="show-more-btn" id="show-more-news">
-            <span class="show-more-text">더보기 (${Math.min(10, total) - 3}건 더)</span>
+            <span class="show-more-text">더보기 (${total - 3}건 더)</span>
             <span class="show-less-text">접기</span>
           </button>
         ` : ''}
@@ -196,39 +313,51 @@
             <span class="us-mover-toggle">▾</span>
           </summary>
           <div class="us-mover-detail">
-            ${(m.reason && m.reason !== '사유 미상') ? `<div class="us-mover-reason">변동사유: ${$h(m.reason)}</div>` : ''}
-            ${(m.news_urls && m.news_urls.length) ? `
-              <div class="us-mover-news">
-                ${m.news_urls.map(n => `<a href="${$h(n.url)}" target="_blank" rel="noopener" class="us-news-link">📰 ${$h(n.title || '관련 뉴스')}</a>`).join('')}
-              </div>
-            ` : ''}
-            <div class="us-mover-meta-grid">
+            <div class="us-detail-meta">
               ${m.market_cap != null ? `<span class="meta-kv"><span class="meta-k">시총</span><span class="meta-v">$${fmtUSDCap(m.market_cap)}</span></span>` : ''}
               ${m.fwd_pe != null ? `<span class="meta-kv"><span class="meta-k">fwd P/E</span><span class="meta-v">${m.fwd_pe.toFixed(1)}배</span></span>` : ''}
-              ${m.fwd_pb != null ? `<span class="meta-kv"><span class="meta-k">fwd P/B</span><span class="meta-v">${m.fwd_pb.toFixed(2)}배</span></span>` : ''}
+              ${m.fwd_pb != null ? `<span class="meta-kv"><span class="meta-k">P/B</span><span class="meta-v">${m.fwd_pb.toFixed(2)}배</span></span>` : ''}
             </div>
+            ${(m.reason && m.reason !== '사유 미상') ? `
+              <div class="detail-row-inner">
+                <span class="detail-row-label">변동사유</span>
+                <span class="detail-row-val">${$h(m.reason)}</span>
+              </div>
+            ` : ''}
+            ${(m.news_urls && m.news_urls.length) ? `
+              <div class="detail-row-inner">
+                <span class="detail-row-label">관련 뉴스</span>
+                <div class="us-news-links">
+                  ${m.news_urls.map(n => `<a href="${$h(n.url)}" target="_blank" rel="noopener" class="us-news-link">📰 ${$h(n.title || '관련 뉴스')}</a>`).join('')}
+                </div>
+              </div>
+            ` : ''}
             ${(m.earnings && m.earnings.length) ? `
-              <div class="us-earnings-label">실적 (EPS)</div>
-              <table class="us-earnings-table">
-                <thead><tr><th>발표일</th><th>추정</th><th>실적</th><th>서프라이즈</th></tr></thead>
-                <tbody>
-                  ${m.earnings.map(e => {
-                    const surp = e.surprise_pct != null
-                      ? `<span class="${e.surprise_pct >= 0 ? 'change-up' : 'change-down'}">${e.surprise_pct >= 0 ? '+' : ''}${e.surprise_pct.toFixed(2)}%</span>`
-                      : '-';
-                    return `<tr>
-                      <td>${e.date || '-'}</td>
-                      <td>${e.eps_est != null ? '$'+e.eps_est.toFixed(2) : '-'}</td>
-                      <td>${e.eps_actual != null ? '$'+e.eps_actual.toFixed(2) : '-'}</td>
-                      <td>${surp}</td>
-                    </tr>`;
-                  }).join('')}
-                </tbody>
-              </table>
+              <div class="detail-row-inner">
+                <span class="detail-row-label">실적 (EPS)</span>
+                <table class="us-earnings-table">
+                  <thead><tr><th>발표일</th><th>추정</th><th>실적</th><th>서프라이즈</th></tr></thead>
+                  <tbody>
+                    ${m.earnings.map(e => {
+                      const surp = e.surprise_pct != null
+                        ? `<span class="${e.surprise_pct >= 0 ? 'change-up' : 'change-down'}">${e.surprise_pct >= 0 ? '+' : ''}${e.surprise_pct.toFixed(2)}%</span>`
+                        : '-';
+                      return `<tr>
+                        <td>${e.date || '-'}</td>
+                        <td>${e.eps_est != null ? '$'+e.eps_est.toFixed(2) : '-'}</td>
+                        <td>${e.eps_actual != null ? '$'+e.eps_actual.toFixed(2) : '-'}</td>
+                        <td>${surp}</td>
+                      </tr>`;
+                    }).join('')}
+                  </tbody>
+                </table>
+              </div>
             ` : ''}
             ${hasDesc ? `
-              <div class="us-meta-label" style="margin-top:10px;">기업개요</div>
-              <div class="us-mover-desc">${$h(m.description)}</div>
+              <div class="detail-row-inner">
+                <span class="detail-row-label">기업개요</span>
+                <div class="us-mover-desc">${$h(m.description)}</div>
+              </div>
             ` : ''}
           </div>
         </details>
@@ -356,8 +485,7 @@
     }
     const capHtml = capStr ? `<span class="meta-kv"><span class="meta-k">시총</span><span class="meta-v">${capStr}</span></span>` : '';
     const peHtml = s.fwd_pe != null ? `<span class="meta-kv"><span class="meta-k">fwd P/E</span><span class="meta-v">${s.fwd_pe.toFixed(1)}배</span></span>` : '';
-    const pbHtml = s.fwd_pb != null ? `<span class="meta-kv"><span class="meta-k">fwd P/B</span><span class="meta-v">${s.fwd_pb.toFixed(2)}배</span></span>` : '';
-    const metaParts = [capHtml, peHtml, pbHtml].filter(Boolean);
+    const metaParts = [capHtml, peHtml].filter(Boolean);
     const metaHtml = metaParts.length
       ? `<div class="detail-row stock-meta-detail-row">${metaParts.join('')}</div>`
       : '';
@@ -502,6 +630,7 @@
 
     contentEl.innerHTML = breadcrumb
       + renderSummary(data)
+      + renderMarketData(data)
       + renderNews(data)
       + renderGlobalResearch(data)
       + renderUSMovers(data)
@@ -512,6 +641,7 @@
     bindStockSearchSort();
     bindChartLazy();
     bindReportToggles();
+    bindMarketCharts();
   }
 
   // ─────────────────────────────────────────────
@@ -604,19 +734,19 @@
     const newsList = document.getElementById('news-list');
     const btn = document.getElementById('show-more-news');
     const cnt = document.getElementById('news-count');
-    if (!newsList || !btn) return;
+    if (!newsList) return;
     const items = Array.from(newsList.querySelectorAll('.news-item'));
     const total = items.length;
     const DEFAULT = 3, MAX = 10;
     let expanded = false;
     function apply() {
-      const target = expanded ? Math.min(MAX, total) : DEFAULT;
+      const target = expanded ? Math.min(MAX, total) : Math.min(DEFAULT, total);
       items.forEach((it, i) => { it.style.display = i < target ? '' : 'none'; });
       if (cnt) cnt.textContent = `${target} / ${total}건`;
-      btn.classList.toggle('expanded', expanded);
+      if (btn) btn.classList.toggle('expanded', expanded);
     }
     apply();
-    btn.addEventListener('click', () => { expanded = !expanded; apply(); });
+    if (btn) btn.addEventListener('click', () => { expanded = !expanded; apply(); });
   }
 
   // ─────────────────────────────────────────────
