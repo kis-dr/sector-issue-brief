@@ -1682,3 +1682,5 @@ a.stock-news-title:hover { text-decoration: underline; }
 .mkt-card-sub { font-size: 10px; color: var(--ink-3); margin-top: 2px; font-family: var(--font-mono); }
 .mkt-card-detail { padding: 0 14px 14px; min-height: 100px; }
 @media (max-width: 640px) { .mkt-cards-grid { grid-template-columns: repeat(2, 1fr); } }
+.mkt-td-item { white-space: nowrap; }
+.mkt-table td, .mkt-table th { white-space: nowrap; font-size: 10px; }

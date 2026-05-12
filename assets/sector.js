@@ -149,12 +149,12 @@
     const tableHtml = tables.map(t => {
       return (t.categories || []).map(cat => {
         const rows = (cat.items || []).map(it => {
-          const chg = it.change || '';
+          let chg = (it.change || '').replace('%', '').trim();
           const neg = chg.includes('-');
           const cls = neg ? 'change-down' : (parseFloat(chg) > 0 ? 'change-up' : '');
-          return `<tr><td class="mkt-td-item">${$h(it.name)}</td><td class="mkt-td-num">${$h(it.avg)}</td><td class="mkt-td-num ${cls}">${$h(chg)}</td></tr>`;
+          return `<tr><td class="mkt-td-item">${$h(it.name)}</td><td class="mkt-td-num">${$h(it.avg)}</td><td class="mkt-td-num ${cls}">${chg}</td></tr>`;
         }).join('');
-        return `<div class="mkt-table-card"><div class="mkt-table-title">${$h(cat.category)} <span class="mkt-table-update">${$h(cat.last_update)}</span></div><table class="mkt-table"><thead><tr><th>Item</th><th>Avg ($)</th><th>Change</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        return `<div class="mkt-table-card"><div class="mkt-table-title">${$h(cat.category)} <span class="mkt-table-update">${$h(cat.last_update)}</span></div><table class="mkt-table"><thead><tr><th>Item</th><th>Avg ($)</th><th>chg(%)</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
     }).join('');
 
