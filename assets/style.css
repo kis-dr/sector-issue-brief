@@ -1684,3 +1684,24 @@ a.stock-news-title:hover { text-decoration: underline; }
 @media (max-width: 640px) { .mkt-cards-grid { grid-template-columns: repeat(2, 1fr); } }
 .mkt-td-item { white-space: nowrap; }
 .mkt-table td, .mkt-table th { white-space: nowrap; font-size: 10px; }
+
+/* 종목 브리핑 — 강조 */
+.briefing-row {
+  padding: 14px 0 12px 0;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 14px;
+}
+.briefing-text {
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.7;
+  display: block;
+  text-decoration: none;
+  background: #fffbe6;
+  border-left: 4px solid #f5c542;
+  padding: 12px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+a.briefing-text:hover { background: #fff8d6; }
+.block-sub { font-size: 10px; color: var(--ink-3); font-weight: 500; margin-left: 8px; }

@@ -184,13 +184,13 @@
     try { series = JSON.parse(wrap.dataset.mktSeries); } catch (e) { return; }
     if (!series || series.length < 2) return;
     const W = wrap.clientWidth || 260, H = 100;
-    const pad = {t:8,r:24,b:22,l:44};
+    const pad = {t:8,r:4,b:22,l:4};
     const vals = series.map(p=>p.v);
     const minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV-minV||1;
     const sx = i => pad.l+(i/(series.length-1))*(W-pad.l-pad.r);
     const sy = v => pad.t+(1-(v-minV)/range)*(H-pad.t-pad.b);
     const gridY = [0,1,2,3].map(i=>minV+range*i/3);
-    const grids = gridY.map(v=>`<line x1="${pad.l}" y1="${sy(v).toFixed(1)}" x2="${W-pad.r}" y2="${sy(v).toFixed(1)}" stroke="#e8e6e0" stroke-width="1"/><text x="${pad.l-3}" y="${(sy(v)+3).toFixed(1)}" text-anchor="end" font-size="8" fill="#999">${v>=10000?(v/1000).toFixed(0)+'k':v>=1000?(v/1000).toFixed(1)+'k':v.toFixed(1)}</text>`).join('');
+    const grids = gridY.map(v=>`<line x1="${pad.l}" y1="${sy(v).toFixed(1)}" x2="${W-pad.r}" y2="${sy(v).toFixed(1)}" stroke="#e8e6e0" stroke-width="1"/>`).join('');
     const step = Math.max(1, Math.ceil(series.length/6));
     const xLbl = series.filter((_,i)=>i%step===0||i===series.length-1).map(p=>{
       const i=series.indexOf(p); return `<text x="${sx(i).toFixed(1)}" y="${H-4}" text-anchor="middle" font-size="8" fill="#999">${(p.d||'').slice(5)}</text>`;
@@ -337,6 +337,7 @@
       <section class="block" id="us-movers-block">
         <div class="block-header">
           <h2 class="block-title">US peer 동향</h2>
+          <span class="block-sub">3% 이상 변동 또는 52주 최고/최저 종목</span>
           <span class="block-count" id="us-movers-count">3 / ${total}건</span>
         </div>
         <div class="us-movers-list" id="us-movers-list">${items}</div>
@@ -493,6 +494,14 @@
           </div>
         </summary>
         <div class="stock-detail">
+          ${s.briefing && s.briefing.briefing ? `
+            <div class="detail-row briefing-row">
+              ${s.briefing.content_url
+                ? `<a href="${$h(s.briefing.content_url)}" target="_blank" rel="noopener" class="briefing-text">${$h(s.briefing.briefing)}</a>`
+                : `<p class="briefing-text">${$h(s.briefing.briefing)}</p>`
+              }
+            </div>
+          ` : ''}
           ${metaHtml}
           ${(s.news && s.news.length > 0) ? `
             <div class="detail-row">
