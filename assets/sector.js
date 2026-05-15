@@ -180,27 +180,48 @@
   }
 
   function drawMktSVG(wrap) {
-    let series;
-    try { series = JSON.parse(wrap.dataset.mktSeries); } catch (e) { return; }
-    if (!series || series.length < 2) return;
-    const W = wrap.clientWidth || 260, H = 100;
-    const pad = {t:8,r:24,b:24,l:24};
-    const vals = series.map(p=>p.v);
-    const minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV-minV||1;
-    const sx = i => pad.l+(i/(series.length-1))*(W-pad.l-pad.r);
-    const sy = v => pad.t+(1-(v-minV)/range)*(H-pad.t-pad.b);
-    const gridY = [0,1,2,3].map(i=>minV+range*i/3);
-    const grids = gridY.map(v=>`<line x1="${pad.l}" y1="${sy(v).toFixed(1)}" x2="${W-pad.r}" y2="${sy(v).toFixed(1)}" stroke="#e8e6e0" stroke-width="1"/>`).join('');
-    const step = Math.max(1, Math.ceil(series.length/6));
-    const xLbl = series.filter((_,i)=>i%step===0||i===series.length-1).map(p=>{
-      const i=series.indexOf(p);
-      const anchor = i===0 ? 'start' : i===series.length-1 ? 'end' : 'middle';
+  let series;
+  try { series = JSON.parse(wrap.dataset.mktSeries); } catch (e) { return; }
+  if (!series || series.length < 2) return;
+
+  const W = wrap.clientWidth || 260, H = 100;
+  // 1. 왼쪽 여백(l)을 줄이고 오른쪽 여백(r)을 넉넉히 확보 (필요시 조정)
+  const pad = {t:8, r:20, b:24, l:10}; 
+  
+  const vals = series.map(p=>p.v);
+  const minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV-minV||1;
+
+  const sx = i => pad.l+(i/(series.length-1))*(W-pad.l-pad.r);
+  const sy = v => pad.t+(1-(v-minV)/range)*(H-pad.t-pad.b);
+
+  const gridY = [0,1,2,3].map(i=>minV+range*i/3);
+  const grids = gridY.map(v=>`<line x1="${pad.l}" y1="${sy(v).toFixed(1)}" x2="${W-pad.r}" y2="${sy(v).toFixed(1)}" stroke="#e8e6e0" stroke-width="1"/>`).join('');
+
+  // 2. X축 라벨 겹침 방지: 간격(step)을 더 넓게 설정 (데이터 8개당 1개꼴)
+  const step = Math.max(2, Math.ceil(series.length / 4)); 
+  const xLbl = series.map((p, i) => {
+    // 첫번째, 마지막, 그리고 step 간격에 해당하는 데이터만 출력
+    if (i === 0 || i === series.length - 1 || i % step === 0) {
+      // 3. 인접한 라벨과 겹치지 않도록 마지막 직전 라벨은 숨김 처리 로직 추가
+      if (i !== series.length - 1 && (series.length - 1 - i) < step * 0.7) return '';
+
+      const anchor = i === 0 ? 'start' : i === series.length - 1 ? 'end' : 'middle';
       return `<text x="${sx(i).toFixed(1)}" y="${H-4}" text-anchor="${anchor}" font-size="8" fill="#999">${(p.d||'').slice(5)}</text>`;
-    }).join('');
-    const pts = series.map((p,i)=>`${sx(i).toFixed(1)},${sy(p.v).toFixed(1)}`).join(' ');
-    const color = vals[vals.length-1]>=vals[0] ? '#c0392b' : '#1565c0';
-    const lx=sx(series.length-1),ly=sy(vals[vals.length-1]);
-    wrap.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;margin-top:8px;"><polygon points="${sx(0).toFixed(1)},${(H-pad.b).toFixed(1)} ${pts} ${sx(series.length-1).toFixed(1)},${(H-pad.b).toFixed(1)}" fill="rgba(0,0,0,0.03)"/>${grids}<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/><circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.5" fill="${color}"/>${xLbl}</svg>`;
+    }
+    return '';
+  }).join('');
+
+  const pts = series.map((p,i)=>`${sx(i).toFixed(1)},${sy(p.v).toFixed(1)}`).join(' ');
+  const color = vals[vals.length-1]>=vals[0] ? '#c0392b' : '#1565c0';
+  const lx=sx(series.length-1),ly=sy(vals[vals.length-1]);
+
+  wrap.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;margin-top:8px;">
+    <polygon points="${sx(0).toFixed(1)},${(H-pad.b).toFixed(1)} ${pts} ${sx(series.length-1).toFixed(1)},${(H-pad.b).toFixed(1)}" fill="rgba(0,0,0,0.03)"/>
+    ${grids}
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+    <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="2.5" fill="${color}"/>
+    ${xLbl}
+  </svg>`;
   }
 
   // ─────────────────────────────────────────────
