@@ -184,7 +184,7 @@
     try { series = JSON.parse(wrap.dataset.mktSeries); } catch (e) { return; }
     if (!series || series.length < 2) return;
     const W = wrap.clientWidth || 260, H = 100;
-    const pad = {t:8,r:4,b:22,l:4};
+    const pad = {t:8,r:24,b:24,l:24};
     const vals = series.map(p=>p.v);
     const minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV-minV||1;
     const sx = i => pad.l+(i/(series.length-1))*(W-pad.l-pad.r);
@@ -193,7 +193,9 @@
     const grids = gridY.map(v=>`<line x1="${pad.l}" y1="${sy(v).toFixed(1)}" x2="${W-pad.r}" y2="${sy(v).toFixed(1)}" stroke="#e8e6e0" stroke-width="1"/>`).join('');
     const step = Math.max(1, Math.ceil(series.length/6));
     const xLbl = series.filter((_,i)=>i%step===0||i===series.length-1).map(p=>{
-      const i=series.indexOf(p); return `<text x="${sx(i).toFixed(1)}" y="${H-4}" text-anchor="middle" font-size="8" fill="#999">${(p.d||'').slice(5)}</text>`;
+      const i=series.indexOf(p);
+      const anchor = i===0 ? 'start' : i===series.length-1 ? 'end' : 'middle';
+      return `<text x="${sx(i).toFixed(1)}" y="${H-4}" text-anchor="${anchor}" font-size="8" fill="#999">${(p.d||'').slice(5)}</text>`;
     }).join('');
     const pts = series.map((p,i)=>`${sx(i).toFixed(1)},${sy(p.v).toFixed(1)}`).join(' ');
     const color = vals[vals.length-1]>=vals[0] ? '#c0392b' : '#1565c0';

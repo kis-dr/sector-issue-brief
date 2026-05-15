@@ -1685,23 +1685,34 @@ a.stock-news-title:hover { text-decoration: underline; }
 .mkt-td-item { white-space: nowrap; }
 .mkt-table td, .mkt-table th { white-space: nowrap; font-size: 10px; }
 
-/* 종목 브리핑 — 강조 */
+/* 종목 브리핑 — AI생성 디자인 */
 .briefing-row {
-  padding: 14px 0 12px 0;
-  border-bottom: 2px solid var(--ink);
-  margin-bottom: 14px;
+  padding: 14px 0 14px 0;
+  border-bottom: 1px dashed var(--line);
+  margin-bottom: 10px;
 }
 .briefing-text {
-  font-size: 14px;
+  font-size: 13px;
   color: var(--ink);
   line-height: 1.7;
   display: block;
   text-decoration: none;
-  background: #fffbe6;
-  border-left: 4px solid #f5c542;
-  padding: 12px 16px;
-  border-radius: 4px;
+  background: linear-gradient(135deg, #f6f3ff 0%, #eef6ff 100%);
+  border: 1px solid #e0daff;
+  padding: 14px 16px;
+  border-radius: 8px;
   font-weight: 500;
+  position: relative;
 }
-a.briefing-text:hover { background: #fff8d6; }
+.briefing-text::before {
+  content: '✦';
+  position: absolute;
+  top: -8px;
+  left: 12px;
+  background: #fff;
+  padding: 0 6px;
+  font-size: 14px;
+  color: #7c6dff;
+}
+a.briefing-text:hover { background: linear-gradient(135deg, #ede8ff 0%, #e4f0ff 100%); border-color: #c8bfff; }
 .block-sub { font-size: 10px; color: var(--ink-3); font-weight: 500; margin-left: 8px; }
