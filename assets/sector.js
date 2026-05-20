@@ -359,8 +359,7 @@
     return `
       <section class="block" id="us-movers-block">
         <div class="block-header">
-          <h2 class="block-title">US peer 동향</h2>
-          <span class="block-sub">3% 이상 변동 또는 52주 최고/최저 종목</span>
+          <h2 class="block-title">US peer 동향<span class="detail-sublabel">3% 이상 변동 또는 52주 최고/최저 종목</span></h2>
           <span class="block-count" id="us-movers-count">3 / ${total}건</span>
         </div>
         <div class="us-movers-list" id="us-movers-list">${items}</div>
@@ -537,7 +536,7 @@
             <ul class="detail-list">${disclosureItems(s.disclosures)}</ul>
           </div>
           <div class="detail-row">
-            <h4 class="detail-label">💹 영업이익 컨센서스 변화 <span class="detail-sublabel">최근 3개월간 증권사에서 발표한 추정치의 평균, 단위: 원</span></h4>
+            <h4 class="detail-label">💹 영업이익 컨센서스 변화 <span class="detail-sublabel">최근 3개월 증권사 추정치 평균, 단위: 원</span></h4>
             ${consensusBlock(s.consensus?.Q, s.consensus?.Y)}
           </div>
           <div class="detail-row">
