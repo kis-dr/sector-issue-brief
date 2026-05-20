@@ -528,20 +528,20 @@
           ${metaHtml}
           ${(s.news && s.news.length > 0) ? `
             <div class="detail-row">
-              <h4 class="detail-label">📰 종목 뉴스 (어제자, 핵심 ${s.news.length}건)</h4>
+              <h4 class="detail-label">📰 종목 뉴스 <span class="detail-sublabel">핵심 ${s.news.length}건</span></h4>
               <ul class="stock-news-list">${stockNewsItems(s.news)}</ul>
             </div>
           ` : ''}
           <div class="detail-row">
-            <h4 class="detail-label">📄 공시 (7일)</h4>
+            <h4 class="detail-label">📄 공시 <span class="detail-sublabel">7일</span></h4>
             <ul class="detail-list">${disclosureItems(s.disclosures)}</ul>
           </div>
           <div class="detail-row">
-            <h4 class="detail-label">💹 영업이익 컨센서스 변화 (최근 1개월, 단위: 원)</h4>
+            <h4 class="detail-label">💹 영업이익 컨센서스 변화 <span class="detail-sublabel">최근 3개월간 증권사에서 발표한 추정치의 평균, 단위: 원</span></h4>
             ${consensusBlock(s.consensus?.Q, s.consensus?.Y)}
           </div>
           <div class="detail-row">
-            <h4 class="detail-label">📑 타사 리포트 (7일)</h4>
+            <h4 class="detail-label">📑 타사 리포트 <span class="detail-sublabel">7일</span></h4>
             <ul class="detail-list">${reportItems(s.reports)}</ul>
           </div>
           ${s.has_chart ? `
@@ -564,7 +564,7 @@
           ` : ''}
           ${(s.stk_flow && s.stk_flow.length > 0) ? `
             <div class="detail-row">
-              <h4 class="detail-label">💰 거래대금 (최근 ${s.stk_flow.length}거래일, 단위: 원)</h4>
+              <h4 class="detail-label">💰 거래대금 <span class="detail-sublabel">최근 ${s.stk_flow.length}거래일, 단위: 원</span></h4>
               ${flowTable(s.stk_flow)}
             </div>
           ` : ''}
