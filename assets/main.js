@@ -90,7 +90,7 @@
       if (!resp.ok) throw new Error(`fetch failed: ${resp.status}`);
       const data = await resp.json();
 
-      tradingDateEl.textContent = formatDate(data.trading_date);
+      tradingDateEl.textContent = formatDate(data.display_date || data.trading_date);
 
       const groups = groupSectors(data.sectors || []);
       // 1st level 정렬: 미리 정해진 순서

@@ -608,7 +608,7 @@
   // 메인 렌더
   // ─────────────────────────────────────────────
   function renderAll(data) {
-    tradingDateEl.textContent = fmtDate(data.trading_date);
+    tradingDateEl.textContent = fmtDate(data.display_date || data.trading_date);
     document.title = `${data.wics_3rd} - 섹터별 이슈 브리핑`;
 
     const sectorReturnHtml = data.sector_return != null
