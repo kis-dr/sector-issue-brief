@@ -653,7 +653,7 @@
       return `
         <section class="block">
           <div class="block-header">
-            <h2 class="block-title">📚 독점 글로벌 리서치</h2>
+            <h2 class="block-title">📚 섹터 독점 글로벌 리서치</h2>
           </div>
           <div class="empty-state">오늘 발행된 리서치 없음</div>
         </section>
@@ -682,7 +682,7 @@
     return `
       <section class="block">
         <div class="block-header">
-          <h2 class="block-title">📚 독점 글로벌 리서치</h2>
+          <h2 class="block-title">📚 섹터 독점 글로벌 리서치</h2>
           <span class="block-count">${items.length}건</span>
         </div>
         <ul class="news-list">${itemsHtml}</ul>
