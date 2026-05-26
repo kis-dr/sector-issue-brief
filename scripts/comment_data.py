@@ -6,7 +6,7 @@
 - Gemini로 핵심 뉴스 선정 + sentiment 태깅 (response_schema 사용)
 """
 
-import json, time, random
+import json, re, time, random
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 
@@ -47,33 +47,72 @@ def remove_similar_articles(df: pd.DataFrame,
 
 
 # ============================================================
-# 2. Gemini 선정 + sentiment 태깅 (response_schema 사용)
+# 2. Gemini fallback 헬퍼
+# ============================================================
+
+def _gemini_call_with_fallback(gemini_client, config, contents, models,
+                                round_waits=(30, 60, 120)):
+    """
+    GEMINI_MODELS 리스트 순서대로 호출 시도. 429/RESOURCE_EXHAUSTED 시 다음 모델로.
+    모든 모델이 한 라운드에서 다 실패하면 round_waits 만큼 대기 후 다시 라운드 재시도.
+    최종 실패 시 마지막 에러 raise.
+    """
+    if not models:
+        raise ValueError("GEMINI_MODELS 리스트가 비어있음")
+
+    last_err = None
+    # 라운드 0 = 즉시 시도, 라운드 1~ = 대기 후 재시도
+    total_rounds = 1 + len(round_waits)
+    for round_idx in range(total_rounds):
+        if round_idx > 0:
+            wait = round_waits[round_idx - 1]
+            print(f"  [Gemini] 모든 모델 실패 → {wait}초 대기 후 라운드 {round_idx+1}/{total_rounds} 재시도")
+            time.sleep(wait)
+        for m in models:
+            try:
+                return gemini_client.models.generate_content(
+                    model=m, contents=contents, config=config
+                )
+            except Exception as e:
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    last_err = e
+                    continue
+                raise
+    raise last_err or RuntimeError("Gemini 모든 모델/라운드 실패")
+
+
+# ============================================================
+# 3. Gemini 선정 + sentiment 태깅 (response_schema 사용)
 # ============================================================
 
 NEWS_SELECTION_PROMPT = """너는 한국 증권사 시니어 에쿼티 애널리스트다.
-주어진 종목의 뉴스 목록 중 주가에 가장 큰 영향을 미칠 핵심 뉴스 **최대 3개**를 선정하라.
+주어진 종목의 뉴스 목록에서 **비중요 뉴스를 제거**하고 남은 것 중 **최대 3개**를 선정하라.
 
-선정 기준 (하나 이상 해당):
-1. 실적: 매출/영업이익/순이익 서프라이즈/쇼크, 가이던스 변경
-2. 수급: 대규모 지분 변동, 자사주 매입/소각, 블록딜, 공매도
-3. 기업 이벤트: M&A, 분할, 유상증자, CB/BW 발행, 상장/상폐
-4. 규제/정책: 업종에 직접 영향 주는 법안/규제/관세/보조금
-5. 산업 수급: 핵심 원자재 가격, 공급망, 수주/계약
+제거 기준 (아래에 해당하면 탈락):
+- 스포츠/연예/사회/날씨/단순 인사 등 펀더멘털 무관
+- 동일 사건 중복 (가장 정보량 많은 것만 남김)
+- 단순 시황 요약 / 지수 리캡 (예: "코스피 상승 마감")
+- 광고성/프로모션/이벤트 홍보
+
+나머지는 모두 유의미한 뉴스로 간주. 특히 아래는 반드시 포함:
+1. 실적: 매출/영업이익/순이익 서프라이즈, 가이던스 변경
+2. 수급: 대규모 지분 변동, 자사주, 블록딜, 공매도
+3. 기업 이벤트: M&A, 분할, 증자, CB/BW
+4. 규제/정책: 업종 직접 영향 법안/관세/보조금
+5. 산업 수급: 원자재 가격, 공급망, 수주/계약
 6. 매크로: 금리, 환율, 신용등급
-7. 경영 리스크: CEO 교체, 횡령/분식, 소송/과징금
-8. 섹터 밸류에이션 리레이팅
+7. 경영 리스크: CEO 교체, 소송/과징금
+8. 밸류에이션 리레이팅, 목표주가 변경, 투자의견 변경
+9. 신규 사업/제품/기술 관련 뉴스
 
-제외 기준: 스포츠/연예/사회/날씨 등 펀더멘털 무관 뉴스
-
-중복 제거: 같은 사건 다루는 뉴스는 가장 정보량 많은 것 1개만.
 각 뉴스마다 sentiment를 "positive"/"negative"/"neutral" 중 하나로 분류.
-
+**최신 뉴스일수록 높은 가중치 부여.** 동일 중요도면 발행 시각이 더 최근인 뉴스 우선.
 빈약하면 빈 배열도 OK."""
 
 
 def select_news_with_sentiment(df: pd.DataFrame, stock_code: str,
-                                gemini_client, MODEL_ID: str, types,
-                                max_input: int = 15, max_retry: int = 3) -> dict:
+                                gemini_client, GEMINI_MODELS: list[str], types,
+                                max_input: int = 30, max_retry: int = 3) -> dict:
     """
     Returns: {
         "selected_ids": [...],
@@ -108,30 +147,34 @@ def select_news_with_sentiment(df: pd.DataFrame, stock_code: str,
     user_content = (f"종목: {stock_code}\n오늘: {datetime.now().strftime('%Y-%m-%d')}\n\n"
                     + json.dumps(inputs, ensure_ascii=False))
 
-    for attempt in range(max_retry):
-        try:
-            resp = gemini_client.models.generate_content(
-                model=MODEL_ID,
-                contents=user_content,
-                config=types.GenerateContentConfig(
-                    system_instruction=NEWS_SELECTION_PROMPT,
-                    response_mime_type="application/json",
-                    response_schema=SCHEMA,
-                    temperature=0.1,
-                ),
-            )
-            parsed = json.loads(resp.text)[:3]   # 안전장치
-            break
-        except Exception as e:
-            err = str(e)
-            if "429" in err and attempt < max_retry - 1:
-                wait = 2 ** (attempt + 1) + random.uniform(0, 2)
-                time.sleep(wait)
-                continue
-            if attempt < max_retry - 1:
-                time.sleep(2 ** (attempt + 1))
-                continue
-            return {"selected_ids": [], "comments": {}}
+    config = types.GenerateContentConfig(
+        system_instruction=NEWS_SELECTION_PROMPT,
+        response_mime_type="application/json",
+        response_schema=SCHEMA,
+        temperature=0.1,
+    )
+    parsed = None
+    try:
+        resp = _gemini_call_with_fallback(
+            gemini_client, config, user_content, GEMINI_MODELS
+        )
+        parsed = json.loads(resp.text)[:3]
+    except Exception as e:
+        # 최종 실패 (라운드 재시도까지 다 실패) → 최신 3건 fallback
+        print(f"  [comment_data] Gemini 최종 실패 ({e}) → 최신 3건 fallback")
+        top3 = df.sort_values("published_at", ascending=False).head(3)
+        fb_ids = top3["id"].astype(str).tolist()
+        fb_comments = {}
+        for _, row in top3.iterrows():
+            nid = str(row["id"])
+            fb_comments[nid] = {
+                "title": row.get("title", ""),
+                "summary": str(row.get("summary", ""))[:1000],
+                "url": row.get("content_url", ""),
+                "published_at": str(row.get("published_at", "")),
+                "sentiment": "neutral",
+            }
+        return {"selected_ids": fb_ids, "comments": fb_comments}
 
     valid_ids  = set(df["id"].astype(str))
     id_to_meta = df.set_index(df["id"].astype(str))[
@@ -147,7 +190,7 @@ def select_news_with_sentiment(df: pd.DataFrame, stock_code: str,
             meta = id_to_meta.get(nid, {})
             comments[nid] = {
                 "title":        meta.get("title", ""),
-                "summary":      str(meta.get("summary", ""))[:300],
+                "summary":      str(meta.get("summary", ""))[:1000],
                 "url":          meta.get("content_url", ""),
                 "published_at": str(meta.get("published_at", "")),
                 "sentiment":    item.get("sentiment", "neutral"),
@@ -161,7 +204,7 @@ def select_news_with_sentiment(df: pd.DataFrame, stock_code: str,
 
 def fetch_stock_comments(all_codes: list[str], last_trading_day: str,
                          header_deepsearch: str, ds_auth,
-                         gemini_client, MODEL_ID: str, types,
+                         gemini_client, GEMINI_MODELS: list[str], types,
                          page_size: int = 100, max_workers: int = 4,
                          filter_empty: bool = True, verbose: bool = True) -> dict:
     """
@@ -180,7 +223,7 @@ def fetch_stock_comments(all_codes: list[str], last_trading_day: str,
     def _work(code):
         try:
             url = (f"{BASE_URL}?symbols=KRX:{code}"
-                   f"&date_from={last_trading_day}&date_to={last_trading_day}"
+                   f"&date_from={last_trading_day}"
                    f"&clustering=false&uniquify=true&research_insight=true"
                    f"&page_size={page_size}")
             resp = requests.get(url, headers={"Authorization": header_deepsearch},
@@ -200,9 +243,29 @@ def fetch_stock_comments(all_codes: list[str], last_trading_day: str,
                        .sort_values("published_at", ascending=False)
                        .reset_index(drop=True))
 
+            # 기본 전처리 필터 (Gemini 전)
+            EXCLUDE_PUB = {'이데일리','조선일보','중앙일보','동아일보',
+                           '뉴데일리','폴리뉴스','데일리안','시민의소리'}
+            NOISE_PAT = re.compile(
+                r'부고|부음|고향|고졸|수능|입시|결혼|이혼|맛집|여행|날씨|'
+                r'축구|야구|농구|골프|올림픽|스포츠|연예|가요|드라마|영화|'
+                r'로또|복권|인사발령|승진|정기인사|취임식|임명장'
+            )
+            def _basic_filter(row):
+                if not row.get('title','').strip():
+                    return False
+                if row.get('publisher','') in EXCLUDE_PUB:
+                    return False
+                t = row.get('title','') + ' ' + row.get('summary','')
+                if NOISE_PAT.search(t):
+                    return False
+                return True
+            mask = news_df.apply(_basic_filter, axis=1)
+            news_df = news_df[mask].reset_index(drop=True)
+
             news_df_unique = remove_similar_articles(news_df)
             result = select_news_with_sentiment(
-                news_df_unique, code, gemini_client, MODEL_ID, types
+                news_df_unique, code, gemini_client, GEMINI_MODELS, types
             )
 
             with lock:

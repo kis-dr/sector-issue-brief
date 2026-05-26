@@ -15,6 +15,26 @@ import pandas as pd
 import requests
 
 
+def _dedup_by_title_publisher(items: list[dict]) -> list[dict]:
+    """
+    (title, publisher) 키로 중복 제거. 가장 최신 published_at만 남김.
+    """
+    if not items:
+        return items
+    sorted_items = sorted(items, key=lambda x: str(x.get("published_at", "")), reverse=True)
+    seen = set()
+    out = []
+    for item in sorted_items:
+        title = (item.get("title") or "").strip()
+        pub = (item.get("publisher") or "").strip()
+        key = (title, pub)
+        if key in seen or not title:
+            continue
+        seen.add(key)
+        out.append(item)
+    return out
+
+
 # ============================================================
 # 1. DISCLOSURE — 7일치 + is_new 마킹
 # ============================================================
@@ -32,7 +52,7 @@ def fetch_disclosure_data(all_codes, last_trading_day,
 
     def _fetch_one(code):
         url = (f"{BASE_URL}?symbols=KRX:{code}"
-               f"&date_from={date_from}&date_to={last_trading_day}")
+               f"&date_from={date_from}")
 
         def _call():
             resp = requests.get(url, headers={"Authorization": header_deepsearch},
@@ -42,10 +62,11 @@ def fetch_disclosure_data(all_codes, last_trading_day,
 
         try:
             data = _retry_call(_call, max_retry=3)  # noqa: F821
+            data = _dedup_by_title_publisher(data)
             # is_new 마킹
             for item in data:
                 pub_date = str(item.get("published_at", ""))[:10]
-                item["is_new"] = (pub_date == last_trading_day)
+                item["is_new"] = (pub_date >= last_trading_day)
 
             with lock:
                 completed[0] += 1
@@ -86,7 +107,7 @@ def fetch_research_data(all_codes, last_trading_day,
 
     def _fetch_one(code):
         url = (f"{BASE_URL}?symbols=KRX:{code}"
-               f"&date_from={date_from}&date_to={last_trading_day}"
+               f"&date_from={date_from}"
                f"&clustering=true&uniquify=true&research_insight=true"
                f"&page_size={page_size}")
 
@@ -98,10 +119,11 @@ def fetch_research_data(all_codes, last_trading_day,
 
         try:
             data = _retry_call(_call, max_retry=3)  # noqa: F821
+            data = _dedup_by_title_publisher(data)
             # is_new 마킹
             for item in data:
                 pub_date = str(item.get("published_at", ""))[:10]
-                item["is_new"] = (pub_date == last_trading_day)
+                item["is_new"] = (pub_date >= last_trading_day)
 
             with lock:
                 completed[0] += 1
@@ -159,6 +181,10 @@ def fetch_consensus_data(all_codes, last_trading_day,
         payload = {**check_params,                          # noqa: F821
                    'jcode': jcode, 'icode': '121500', 'yyyymm': yyyymm}
 
+        # 최근 1개월 cutoff
+        cutoff_int = int((base_date - timedelta(days=30)).strftime('%Y%m%d'))
+        ltd_int = int(last_trading_day.replace("-", ""))
+
         session = get_session()
         for attempt in range(max_retry):
             try:
@@ -166,16 +192,22 @@ def fetch_consensus_data(all_codes, last_trading_day,
                                    data=payload)
                 df = (pd.DataFrame(res.json()['results'])
                       .query(f"TERM_TYP == {term_map[term]}")
-                      .assign(TERM_TYP=term)
-                      .pipe(lambda d: d[d['VAL'] != d['VAL'].shift(1)])
-                      .head(5))
+                      .assign(TERM_TYP=term))
+                if df.empty:
+                    return df.assign(is_new=False)
 
-                # is_new 마킹 (CNS_DT는 정수 20260429 형식)
-                if not df.empty and CONSENSUS_DATE_COL in df.columns:
-                    ltd_int = int(last_trading_day.replace("-", ""))
-                    df['is_new'] = df[CONSENSUS_DATE_COL].astype(int) == ltd_int
-                else:
-                    df['is_new'] = False
+                # 최근 1개월 데이터만
+                df['CNS_DT'] = df['CNS_DT'].astype(int)
+                df = df[df['CNS_DT'] >= cutoff_int]
+                if df.empty:
+                    return df.assign(is_new=False)
+
+                # 값 변동 시점만 (값 같으면 스킵)
+                df = df.sort_values('CNS_DT', ascending=True).reset_index(drop=True)
+                df = df[df['VAL'] != df['VAL'].shift(1)]
+
+                # is_new 마킹
+                df['is_new'] = df['CNS_DT'] >= ltd_int
                 return df
             except Exception:
                 if attempt < max_retry - 1:

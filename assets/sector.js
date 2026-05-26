@@ -608,16 +608,21 @@
   // 메인 렌더
   // ─────────────────────────────────────────────
   function renderAll(data) {
-    tradingDateEl.textContent = fmtDate(data.display_date || data.trading_date);
+    renderDateSelector(currentDate);   // 드롭다운 (or 단일 라벨)
     document.title = `${data.wics_3rd} - 섹터별 이슈 브리핑`;
 
     const sectorReturnHtml = data.sector_return != null
       ? `<div class="sector-return-badge">${fmtChange(data.sector_return)}</div>`
       : '';
 
+    // "전체" 링크에 현재 ?date= 전파
+    const backHref = currentDate
+      ? `../index.html?date=${encodeURIComponent(currentDate)}`
+      : '../index.html';
+
     const breadcrumb = `
       <nav class="breadcrumb">
-        <a href="../index.html">전체</a><span class="bc-sep">›</span>
+        <a href="${backHref}">전체</a><span class="bc-sep">›</span>
         <span>${$h(data.wics_1st)}</span><span class="bc-sep">›</span>
         <span>${$h(data.wics_2nd)}</span><span class="bc-sep">›</span>
         <span class="bc-current">${$h(data.wics_3rd)}</span>
@@ -993,6 +998,77 @@
   }
 
   // ─────────────────────────────────────────────
+  // 날짜 선택 (URL ?date=, dates.json, 드롭다운)
+  // ─────────────────────────────────────────────
+  let datesMeta = null;       // {available_dates, latest}
+  let currentDate = null;     // 현재 선택된 날짜
+
+  function getDateParam() {
+    const p = new URLSearchParams(window.location.search);
+    return p.get('date');
+  }
+
+  function setDateParam(date) {
+    const url = new URL(window.location.href);
+    if (date) url.searchParams.set('date', date);
+    else url.searchParams.delete('date');
+    window.history.replaceState({}, '', url.toString());
+  }
+
+  function renderDateSelector(selectedDate) {
+    if (!datesMeta || !datesMeta.available_dates || datesMeta.available_dates.length === 0) {
+      tradingDateEl.textContent = '―';
+      return;
+    }
+    if (datesMeta.available_dates.length === 1) {
+      tradingDateEl.textContent = fmtDate(selectedDate);
+      return;
+    }
+    const opts = datesMeta.available_dates.map(d =>
+      `<option value="${$h(d)}"${d === selectedDate ? ' selected' : ''}>${fmtDate(d)}</option>`
+    ).join('');
+    tradingDateEl.innerHTML = `<select id="date-selector" class="date-selector">${opts}</select>`;
+    const sel = document.getElementById('date-selector');
+    sel.addEventListener('change', async (e) => {
+      const newDate = e.target.value;
+      currentDate = newDate;
+      setDateParam(newDate);
+      // 차트 인스턴스/캐시 정리 (선택된 날짜의 데이터에 맞춰 다시 그리기 위해)
+      for (const code of Object.keys(chartInstances)) {
+        try { chartInstances[code].destroy(); } catch (_) {}
+        delete chartInstances[code];
+      }
+      for (const code of Object.keys(chartCache)) delete chartCache[code];
+      await loadSector(newDate);
+    });
+  }
+
+  // 섹터 JSON fetch & 렌더
+  async function loadSector(date) {
+    if (loadingEl) {
+      loadingEl.classList.remove('error');
+      loadingEl.textContent = '불러오는 중...';
+      loadingEl.style.display = '';
+    }
+    contentEl.innerHTML = '';
+    try {
+      const resp = await fetch(`../data/sectors/${encodeURIComponent(SLUG)}_${encodeURIComponent(date)}.json?_=${Date.now()}`);
+      if (!resp.ok) throw new Error(`섹터 데이터 fetch 실패: ${resp.status}`);
+      const data = await resp.json();
+      if (loadingEl) loadingEl.style.display = 'none';
+      renderAll(data);
+    } catch (e) {
+      console.error(e);
+      contentEl.innerHTML = `
+        <div class="loading-state error">
+          데이터를 불러올 수 없습니다.<br>
+          <small>slug: ${$h(SLUG)} / date: ${$h(date)} / ${$h(String(e))}</small>
+        </div>
+      `;
+    }
+  }
+
+  // ─────────────────────────────────────────────
   // 진입
   // ─────────────────────────────────────────────
   async function load() {
@@ -1001,10 +1077,25 @@
       return;
     }
     try {
-      const resp = await fetch(`../data/sectors/${SLUG}.json?_=${Date.now()}`);
-      if (!resp.ok) throw new Error(`섹터 데이터 fetch 실패: ${resp.status}`);
-      const data = await resp.json();
-      renderAll(data);
+      // 1. dates.json fetch
+      const resp = await fetch('../data/dates.json?_=' + Date.now());
+      if (!resp.ok) throw new Error(`dates.json fetch failed: ${resp.status}`);
+      datesMeta = await resp.json();
+      if (!datesMeta.available_dates || datesMeta.available_dates.length === 0) {
+        throw new Error('가용 날짜 없음');
+      }
+
+      // 2. 선택할 날짜 결정 (URL 우선, 없으면 latest)
+      const urlDate = getDateParam();
+      if (urlDate && datesMeta.available_dates.includes(urlDate)) {
+        currentDate = urlDate;
+      } else {
+        currentDate = datesMeta.latest;
+        setDateParam(currentDate);
+      }
+
+      // 3. 섹터 데이터 로드 (드롭다운은 renderAll 안에서 그려짐)
+      await loadSector(currentDate);
     } catch (e) {
       console.error(e);
       contentEl.innerHTML = `

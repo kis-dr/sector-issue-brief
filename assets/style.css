@@ -112,6 +112,29 @@ ul { list-style: none; padding: 0; margin: 0; }
   color: var(--ink-2);
 }
 .dept { color: var(--ink-3); }
+
+/* 날짜 드롭다운 (.date 안에 들어가는 select) */
+.date-selector {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+.date-selector:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+.date-selector:focus {
+  border-color: var(--ink-2);
+}
+
 .back-link {
   color: var(--ink-2);
   font-weight: 500;
