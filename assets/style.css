@@ -1744,3 +1744,71 @@ a.stock-news-title:hover { text-decoration: underline; }
 }
 a.briefing-text:hover { background: linear-gradient(135deg, #ede8ff 0%, #e4f0ff 100%); border-color: #c8bfff; }
 .block-sub { font-size: 10px; color: var(--ink-3); font-weight: 500; margin-left: 8px; }
+
+/* ============================================
+   섹터 US 어닝콜 (US peer 동향 카드 스타일 재활용)
+   ============================================ */
+.us-earnings-card {
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.us-earnings-card:hover { border-color: var(--ink-3); }
+.us-earnings-card[open] { border-color: var(--ink); }
+
+.us-earnings-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  cursor: pointer;
+  list-style: none;
+  flex-wrap: wrap;
+}
+.us-earnings-summary-row::-webkit-details-marker { display: none; }
+.us-earnings-card[open] .us-mover-toggle {
+  transform: rotate(180deg);
+  color: var(--ink);
+}
+
+.us-earnings-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  flex: 1 1 auto;
+  min-width: 200px;
+  line-height: 1.4;
+}
+.us-earnings-title-link {
+  color: var(--ink);
+  text-decoration: none;
+}
+.us-earnings-title-link:hover {
+  text-decoration: underline;
+}
+
+.us-earnings-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+}
+
+.us-earnings-summary {
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+.us-earnings-summary-line {
+  margin-bottom: 6px;
+}
+.us-earnings-summary-line:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .us-earnings-summary-row { padding: 10px 12px; gap: 8px; }
+  .us-earnings-title { font-size: 13px; }
+}

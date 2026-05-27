@@ -374,6 +374,181 @@
   }
 
   // ─────────────────────────────────────────────
+  // 섹터 US 어닝콜 - US peer 동향과 동일 스타일 (카드 펼치고 접기)
+  // ─────────────────────────────────────────────
+  // EPS 금액 표시: $X.XX (음수는 -$X.XX)
+  function fmtEPS(v) {
+    if (v == null) return '-';
+    const n = Number(v);
+    if (isNaN(n)) return '-';
+    const abs = Math.abs(n);
+    return n < 0 ? `-$${abs.toFixed(2)}` : `$${abs.toFixed(2)}`;
+  }
+  // Revenue 단위 표시: 큰 수 → $XB / $XM / $XK
+  function fmtRevenueUSD(v) {
+    if (v == null) return '-';
+    const n = Number(v);
+    if (isNaN(n)) return '-';
+    const a = Math.abs(n);
+    let txt;
+    if (a >= 1_000_000_000) txt = `$${(a / 1_000_000_000).toFixed(2)}B`;
+    else if (a >= 1_000_000) txt = `$${(a / 1_000_000).toFixed(1)}M`;
+    else if (a >= 1_000)    txt = `$${(a / 1_000).toFixed(1)}K`;
+    else                    txt = `$${a.toFixed(2)}`;
+    return n < 0 ? '-' + txt : txt;
+  }
+  // surprise 배지: actual > expected → 빨강(BEAT), actual < expected → 파랑(MISS)
+  // change-up / change-down 클래스 재활용 (US peer 카드와 동일한 시각 언어)
+  function fmtEPSSurpriseBadge(actual, expected) {
+    if (actual == null || expected == null) return '';
+    const a = Number(actual), e = Number(expected);
+    if (isNaN(a) || isNaN(e)) return '';
+    if (a > e) return `<span class="change change-up">BEAT</span>`;
+    if (a < e) return `<span class="change change-down">MISS</span>`;
+    return '';
+  }
+  // 타이틀 정규화: "디지털 터빈 (APPS) 2026 Q4 어닝콜 녹취록" → "디지털 터빈 2026 Q4 어닝콜"
+  // - 종목명 뒤의 (TICKER) 패턴 제거
+  // - 끝의 '녹취록' / 'Transcript' 제거
+  function fmtEarningsTitle(s) {
+    if (!s) return '';
+    let t = String(s).trim();
+    // (TICKER) 또는 (TICKER.XX) 패턴 제거 — 영문/숫자/.만 허용
+    t = t.replace(/\s*\([A-Za-z0-9.]+\)\s*/g, ' ');
+    // 끝의 '녹취록' / 'Transcript' 제거
+    t = t.replace(/\s*(녹취록|Transcript)\s*$/i, '');
+    // 다중 공백 정리
+    t = t.replace(/\s{2,}/g, ' ').trim();
+    return t;
+  }
+  // summary: '다. ' 구분자 → 줄바꿈
+  function fmtEarningsSummary(s) {
+    if (!s) return '';
+    // '다. ' 또는 '다.\n' 또는 '다.<EOF>' 등 모두 처리. 마지막 문장도 끊기지 않게.
+    // 문자 분리: '다. '를 split 기준으로 쓰고, 마지막 조각 제외 모두 끝에 '다.' 추가
+    const raw = String(s).trim();
+    // 끝에 줄바꿈 있는 변형까지 흡수
+    const parts = raw.split(/다\.\s+/);
+    if (parts.length === 1) {
+      // 분리 실패: 그대로
+      return $h(raw);
+    }
+    const lines = parts.map((p, i) => {
+      if (!p) return '';
+      // 마지막 조각이 아니면 '다.' 복원
+      if (i < parts.length - 1) return $h(p) + '다.';
+      return $h(p);
+    }).filter(Boolean);
+    return lines.map(l => `<div class="us-earnings-summary-line">${l}</div>`).join('');
+  }
+
+  function renderUSEarnings(data) {
+    const items = data.us_earnings || [];
+    if (items.length === 0) {
+      return `
+        <section class="block">
+          <div class="block-header">
+            <h2 class="block-title">📞 섹터 US 어닝콜</h2>
+          </div>
+          <div class="empty-state">오늘 발표된 어닝콜 없음</div>
+        </section>
+      `;
+    }
+    const total = items.length;
+
+    const cards = items.map((e, idx) => {
+      // 닫혔을 때: ticker + 정규화된 title + surprise 배지 (BEAT/MISS)
+      const ticker = $h(e.ticker || '');
+      const titleKo = $h(fmtEarningsTitle(e.title_ko || ''));
+      const source = e.source || '';
+      const titleHtml = source
+        ? `<a href="${$h(source)}" target="_blank" rel="noopener" class="us-earnings-title-link">${titleKo}</a>`
+        : `<span class="us-earnings-title-link">${titleKo}</span>`;
+
+      const surpBadge = fmtEPSSurpriseBadge(e.eps_actual, e.eps_expected);
+
+      // 메타: transcript_date · period
+      const dateLabel = e.transcript_date ? e.transcript_date.replace(/-/g, '.') : '';
+      const period = e.period ? $h(e.period) : '';
+      const metaLine = [dateLabel, period].filter(Boolean).join(' · ');
+
+      // 펼친 내용: 실적/예상 표 + summary
+      const epsActStr = e.eps_actual != null ? fmtEPS(e.eps_actual) : '-';
+      const epsExpStr = e.eps_expected != null ? fmtEPS(e.eps_expected) : '-';
+      const revActStr = e.revenue_actual != null ? fmtRevenueUSD(e.revenue_actual) : '-';
+      const revExpStr = e.revenue_expected != null ? fmtRevenueUSD(e.revenue_expected) : '-';
+
+      // 표 surprise: 실제>예상 빨강 BEAT, 실제<예상 파랑 MISS (없으면 '-')
+      const revSurp = (e.revenue_actual != null && e.revenue_expected != null)
+        ? (e.revenue_actual > e.revenue_expected
+            ? '<span class="change change-up">BEAT</span>'
+            : (e.revenue_actual < e.revenue_expected
+                ? '<span class="change change-down">MISS</span>'
+                : ''))
+        : '';
+      const epsSurp = surpBadge;
+
+      const summaryHtml = e.summary ? fmtEarningsSummary(e.summary) : '';
+
+      return `
+        <details class="us-earnings-card" data-idx="${idx}">
+          <summary class="us-earnings-summary-row">
+            <span class="ticker">${ticker}</span>
+            <span class="us-earnings-title">${titleHtml}</span>
+            ${surpBadge}
+            <span class="us-mover-toggle">▾</span>
+          </summary>
+          <div class="us-mover-detail">
+            ${metaLine ? `<div class="us-earnings-meta">${metaLine}</div>` : ''}
+            <div class="detail-row-inner">
+              <span class="detail-row-label">실적 vs 예상</span>
+              <table class="us-earnings-table">
+                <thead><tr><th>구분</th><th>실제</th><th>예상</th><th>서프라이즈</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td>Revenue</td>
+                    <td>${revActStr}</td>
+                    <td>${revExpStr}</td>
+                    <td>${revSurp || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td>EPS</td>
+                    <td>${epsActStr}</td>
+                    <td>${epsExpStr}</td>
+                    <td>${epsSurp || '-'}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            ${summaryHtml ? `
+              <div class="detail-row-inner">
+                <span class="detail-row-label">실적 요약</span>
+                <div class="us-earnings-summary">${summaryHtml}</div>
+              </div>
+            ` : ''}
+          </div>
+        </details>
+      `;
+    }).join('');
+
+    return `
+      <section class="block" id="us-earnings-block">
+        <div class="block-header">
+          <h2 class="block-title">📞 섹터 US 어닝콜</h2>
+          <span class="block-count" id="us-earnings-count">${Math.min(3, total)} / ${total}건</span>
+        </div>
+        <div class="us-movers-list" id="us-earnings-list">${cards}</div>
+        ${total > 3 ? `
+          <button class="show-more-btn" id="show-more-us-earnings">
+            <span class="show-more-text">더보기 (${total - 3}건 더)</span>
+            <span class="show-less-text">접기</span>
+          </button>
+        ` : ''}
+      </section>
+    `;
+  }
+
+  // ─────────────────────────────────────────────
   // 종목별 상세
   // ─────────────────────────────────────────────
   function disclosureItems(arr) {
@@ -639,10 +814,12 @@
       + renderNews(data)
       + renderGlobalResearch(data)
       + renderUSMovers(data)
+      + renderUSEarnings(data)
       + renderStocks(data);
 
     bindNewsToggle(data);
     bindUSMoversToggle(data);
+    bindUSEarningsToggle(data);
     bindStockSearchSort();
     bindChartLazy();
     bindReportToggles();
@@ -711,6 +888,28 @@
       const target = expanded ? total : DEFAULT;
       items.forEach((it, i) => { it.style.display = i < target ? '' : 'none'; });
       if (cnt) cnt.textContent = `${target} / ${total}건`;
+      if (btn) btn.classList.toggle('expanded', expanded);
+    }
+    apply();
+    if (btn) btn.addEventListener('click', () => { expanded = !expanded; apply(); });
+  }
+
+  // ─────────────────────────────────────────────
+  // US 어닝콜 더보기 토글 (디폴트 3건)
+  // ─────────────────────────────────────────────
+  function bindUSEarningsToggle(data) {
+    const list = document.getElementById('us-earnings-list');
+    const btn  = document.getElementById('show-more-us-earnings');
+    const cnt  = document.getElementById('us-earnings-count');
+    if (!list) return;
+    const items = Array.from(list.querySelectorAll('.us-earnings-card'));
+    const total = items.length;
+    const DEFAULT = 3;
+    let expanded = false;
+    function apply() {
+      const target = expanded ? total : DEFAULT;
+      items.forEach((it, i) => { it.style.display = i < target ? '' : 'none'; });
+      if (cnt) cnt.textContent = `${Math.min(target, total)} / ${total}건`;
       if (btn) btn.classList.toggle('expanded', expanded);
     }
     apply();
