@@ -465,7 +465,10 @@
         ? `<a href="${$h(source)}" target="_blank" rel="noopener" class="us-earnings-title-link">${titleKo}</a>`
         : `<span class="us-earnings-title-link">${titleKo}</span>`;
 
-      const surpBadge = fmtEPSSurpriseBadge(e.eps_actual, e.eps_expected);
+      // 카드 헤더 배지: EPS 우선 → 없으면 Revenue로 fallback
+      const epsBadge = fmtEPSSurpriseBadge(e.eps_actual, e.eps_expected);
+      const revBadge = fmtEPSSurpriseBadge(e.revenue_actual, e.revenue_expected);
+      const headerBadge = epsBadge || revBadge;
 
       // 메타: transcript_date · period
       const dateLabel = e.transcript_date ? e.transcript_date.replace(/-/g, '.') : '';
@@ -478,15 +481,9 @@
       const revActStr = e.revenue_actual != null ? fmtRevenueUSD(e.revenue_actual) : '-';
       const revExpStr = e.revenue_expected != null ? fmtRevenueUSD(e.revenue_expected) : '-';
 
-      // 표 surprise: 실제>예상 빨강 BEAT, 실제<예상 파랑 MISS (없으면 '-')
-      const revSurp = (e.revenue_actual != null && e.revenue_expected != null)
-        ? (e.revenue_actual > e.revenue_expected
-            ? '<span class="change change-up">BEAT</span>'
-            : (e.revenue_actual < e.revenue_expected
-                ? '<span class="change change-down">MISS</span>'
-                : ''))
-        : '';
-      const epsSurp = surpBadge;
+      // 표 행별 surprise 배지 (각 행마다 개별 — 이건 fallback 안 함)
+      const revSurp = revBadge;
+      const epsSurp = epsBadge;
 
       const summaryHtml = e.summary ? fmtEarningsSummary(e.summary) : '';
 
@@ -495,7 +492,7 @@
           <summary class="us-earnings-summary-row">
             <span class="ticker">${ticker}</span>
             <span class="us-earnings-title">${titleHtml}</span>
-            ${surpBadge}
+            ${headerBadge}
             <span class="us-mover-toggle">▾</span>
           </summary>
           <div class="us-mover-detail">
