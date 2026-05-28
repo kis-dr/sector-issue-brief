@@ -12,7 +12,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>섹터별 이슈 브리핑</title>
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendard-variable-dynamic-subset.css">
-  <link rel="stylesheet" href="assets/style.css?v=21">
+  <link rel="stylesheet" href="assets/style.css?v=22">
 </head>
 <body>
   <header class="site-header">
@@ -34,10 +34,18 @@
     <section class="hero">
       <h1 class="hero-title">오늘의 섹터 이슈</h1>
       <p class="hero-sub">담당 섹터를 선택하여 상세 브리핑을 확인하세요.</p>
-      <div class="search-bar">
-        <input type="text" id="sector-search" placeholder="섹터명 검색 (예: 반도체, 조선, 화장품...)">
-      </div>
     </section>
+
+    <!-- sticky 검색바 (스크롤 시 헤더 아래에 흡수) -->
+    <div class="search-sticky" id="search-sticky">
+      <div class="search-sticky-inner">
+        <div class="search-bar">
+          <input type="text" id="sector-search" placeholder="섹터명 검색 (예: 반도체, 조선, 화장품...)">
+        </div>
+      </div>
+    </div>
+    <!-- IntersectionObserver용 sentinel -->
+    <div id="search-sentinel"></div>
 
     <section class="sector-groups" id="sector-groups">
       <div class="loading-state" id="loading">데이터 로딩 중...</div>
@@ -52,6 +60,6 @@
     </div>
   </footer>
 
-  <script src="assets/main.js?v=21"></script>
+  <script src="assets/main.js?v=22"></script>
 </body>
 </html>

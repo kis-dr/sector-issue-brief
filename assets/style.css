@@ -146,7 +146,7 @@ ul { list-style: none; padding: 0; margin: 0; }
    Main / Hero
    ============================================ */
 .main-content { padding: 56px 28px 80px; }
-.hero { margin-bottom: 56px; }
+.hero { margin-bottom: 24px; }
 .hero-title {
   font-size: 36px;
   font-weight: 700;
@@ -175,6 +175,52 @@ ul { list-style: none; padding: 0; margin: 0; }
 }
 .search-bar input:focus {
   border-color: var(--ink);
+}
+
+/* ============================================
+   Sticky Search Bar
+   ============================================ */
+.search-sticky {
+  position: sticky;
+  top: 64px; /* site-header height */
+  z-index: 9;
+  background: var(--bg);
+  margin: 0 -28px 24px;       /* container padding 상쇄 + 아래 여백 */
+  padding: 8px 28px 12px;
+  transition: padding 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+  border-bottom: 1px solid transparent;
+}
+.search-sticky-inner {
+  max-width: var(--container);
+  margin: 0 auto;
+}
+.search-sticky .search-bar {
+  max-width: 480px;
+  transition: max-width 0.2s ease;
+}
+.search-sticky .search-bar input {
+  transition: padding 0.2s ease, font-size 0.2s ease;
+}
+
+/* 스크롤되어 헤더 아래에 붙은 상태 (JS가 .is-stuck 토글) */
+.search-sticky.is-stuck {
+  padding: 8px 28px;
+  background: var(--bg-card);
+  border-bottom-color: var(--line);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+.search-sticky.is-stuck .search-bar {
+  max-width: 360px;
+}
+.search-sticky.is-stuck .search-bar input {
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+/* sentinel: IntersectionObserver 감지용 (보이지 않음) */
+#search-sentinel {
+  height: 1px;
+  margin: 0;
 }
 
 /* ============================================

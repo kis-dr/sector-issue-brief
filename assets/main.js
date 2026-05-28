@@ -210,5 +210,24 @@
     }
   }
 
+  // ─────────────────────────────────────────────
+  // 검색바 sticky 축소 (sentinel이 화면 위로 사라지면 .is-stuck 추가)
+  // ─────────────────────────────────────────────
+  function setupStickySearch() {
+    const sentinel = document.getElementById('search-sentinel');
+    const stickyEl = document.getElementById('search-sticky');
+    if (!sentinel || !stickyEl) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        stickyEl.classList.toggle('is-stuck', !entry.isIntersecting);
+      },
+      // rootMargin top: 헤더 높이(64px)만큼 빼서 헤더에 가려지는 시점을 기준으로 감지
+      { rootMargin: '-64px 0px 0px 0px', threshold: 0 }
+    );
+    observer.observe(sentinel);
+  }
+
+  setupStickySearch();
   load();
 })();
