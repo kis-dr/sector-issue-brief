@@ -1789,6 +1789,12 @@ a.stock-news-title:hover { text-decoration: underline; }
   color: #7c6dff;
 }
 a.briefing-text:hover { background: linear-gradient(135deg, #ede8ff 0%, #e4f0ff 100%); border-color: #c8bfff; }
+/* US peer 변동사유(브리핑 박스) ↔ 관련 뉴스 구분선 제거 (종목별 상세 브리핑은 그대로 유지) */
+.us-mover-detail .briefing-row {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
 .block-sub { font-size: 10px; color: var(--ink-3); font-weight: 500; margin-left: 8px; }
 
 /* ============================================
