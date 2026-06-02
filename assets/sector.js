@@ -311,9 +311,8 @@
               ${m.fwd_pb != null ? `<span class="meta-kv"><span class="meta-k">P/B</span><span class="meta-v">${m.fwd_pb.toFixed(2)}배</span></span>` : ''}
             </div>
             ${(m.reason && m.reason !== '사유 미상') ? `
-              <div class="detail-row-inner">
-                <span class="detail-row-label">변동사유</span>
-                <span class="detail-row-val">${$h(m.reason)}</span>
+              <div class="detail-row briefing-row">
+                <p class="briefing-text">${$h(m.reason)}</p>
               </div>
             ` : ''}
             ${(m.news_urls && m.news_urls.length) ? `
