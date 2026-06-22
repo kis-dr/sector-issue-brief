@@ -14,6 +14,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 import pandas as pd
 
+import logging
+logger = logging.getLogger(__name__)
+
 # 외부 의존 (ipynb 환경에서 정의된 것):
 #   gemini_client, GEMINI_MODELS, types, coverage_sector_list, wics_stock_df
 
@@ -74,7 +77,7 @@ def download_chart(code: str, last_trading_day: str,
                             "currency": "KRW", "data": data}
         except Exception as e:
             if verbose and attempt == 0:
-                print(f"  [fdr {code}] 실패: {e}")
+                logger.warning(f"  [fdr {code}] 실패: {e}")
 
         # yf fallback
         try:
@@ -93,13 +96,13 @@ def download_chart(code: str, last_trading_day: str,
                             for _, r in df.iterrows() if pd.notna(r[close_col])]
                     if data:
                         if verbose:
-                            print(f"  [yf fallback {code}] {ticker} → {len(data)}건")
+                            logger.info(f"  [yf fallback {code}] {ticker} → {len(data)}건")
                         return {"code": code, "ticker": ticker,
                                 "fetched_at": datetime.now().isoformat(timespec='seconds'),
                                 "currency": "KRW", "data": data}
         except Exception as e:
             if verbose and attempt == 0:
-                print(f"  [yf {code}] fallback 실패: {e}")
+                logger.warning(f"  [yf {code}] fallback 실패: {e}")
 
         if attempt == 0:
             time.sleep(2)  # 재시도 전 대기
@@ -129,11 +132,11 @@ def download_charts_batch(active_codes: list[str], last_trading_day: str,
                     json.dump(chart, f, ensure_ascii=False, separators=(',', ':'))
                 result[code] = True
                 if verbose:
-                    print(f"[CHART {completed[0]}/{total}] {code} | {len(chart['data'])} days")
+                    logger.info(f"[CHART {completed[0]}/{total}] {code} | {len(chart['data'])} days")
             else:
                 result[code] = False
                 if verbose:
-                    print(f"[CHART {completed[0]}/{total}] {code} | FAIL")
+                    logger.warning(f"[CHART {completed[0]}/{total}] {code} | FAIL")
 
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
         list(ex.map(_work, active_codes))
@@ -141,7 +144,7 @@ def download_charts_batch(active_codes: list[str], last_trading_day: str,
     # 실패한 종목 재시도 (sequential, 2회)
     failed = [c for c, ok in result.items() if not ok]
     if failed:
-        print(f"[CHART] {len(failed)}개 실패 → 재시도...")
+        logger.warning(f"[CHART] {len(failed)}개 실패 → 재시도...")
         for code in failed:
             for attempt in range(2):
                 time.sleep(1)
@@ -150,10 +153,10 @@ def download_charts_batch(active_codes: list[str], last_trading_day: str,
                     with open(os.path.join(out_dir, f"{code}.json"), 'w', encoding='utf-8') as f:
                         json.dump(chart, f, ensure_ascii=False, separators=(',', ':'))
                     result[code] = True
-                    print(f"  [RETRY] {code} → OK (attempt {attempt+1})")
+                    logger.info(f"  [RETRY] {code} → OK (attempt {attempt+1})")
                     break
             else:
-                print(f"  [RETRY] {code} → 최종 실패")
+                logger.error(f"  [RETRY] {code} → 최종 실패")
     return result
 
 
@@ -447,7 +450,7 @@ def generate_ai_summaries(sectors_data: dict[str, dict],
             if round_idx > 0:
                 wait = round_waits[round_idx - 1]
                 if verbose:
-                    print(f"  [Gemini] 모든 모델 실패 → {wait}초 대기 후 라운드 {round_idx+1}/{total_rounds} 재시도")
+                    logger.warning(f"  [Gemini] 모든 모델 실패 → {wait}초 대기 후 라운드 {round_idx+1}/{total_rounds} 재시도")
                 time.sleep(wait)
             for m in GEMINI_MODELS:
                 try:
@@ -479,7 +482,7 @@ def generate_ai_summaries(sectors_data: dict[str, dict],
         except Exception as e:
             # 최종 실패 (라운드 재시도까지 다 실패) → 빈 bullets fallback
             if verbose:
-                print(f"  [AI {slug}] 최종 실패: {e}")
+                logger.error(f"  [AI {slug}] 최종 실패: {e}")
             return slug, []
 
     result = {}
@@ -489,7 +492,7 @@ def generate_ai_summaries(sectors_data: dict[str, dict],
             slug, bullets = fut.result()
             result[slug] = bullets
             if verbose:
-                print(f"[AI] {slug}: {len(bullets)} bullets")
+                logger.info(f"[AI] {slug}: {len(bullets)} bullets")
     return result
 
 
@@ -516,7 +519,8 @@ def build_sector_json(wics: str, slug: str,
                       display_date: str, 
                       sector_return: float | None = None,
                       global_research: list[dict] | None = None,
-                      market_data: dict | None = None) -> dict:
+                      market_data: dict | None = None,
+                      us_earnings: list[dict] | None = None) -> dict:
     parts = wics.split('-')
     return {
         "slug":                  slug,
@@ -532,6 +536,7 @@ def build_sector_json(wics: str, slug: str,
         "news":                  news_list,
         "global_research":       global_research or [],
         "us_movers":             us_movers,
+        "us_earnings":           us_earnings or [],
         "stocks":                stocks,
         "market_data":           market_data or {"charts": [], "tables": []},
     }
@@ -596,6 +601,7 @@ def build_index_json(sectors_data: dict[str, dict],
             "issue_count_total":  total_count,
             "stock_count":        len(data.get('stocks', [])),
             "us_mover_count":     len(data.get('us_movers', [])),
+            "us_earnings_count":  len(data.get('us_earnings', [])),
         })
     # 1st level → 2nd level → 3rd level 알파벳순
     sector_list.sort(key=lambda s: (s['wics_1st'], s['wics_2nd'], s['wics_3rd']))
@@ -634,7 +640,8 @@ def run_serialization(
     briefing_dict: dict,                            # {code: {briefing, content_url, ...}}
     market_data_by_slug: dict,                      # {slug: {charts: [], tables: []}}
     wics_slug_map: dict,                            # WICS → slug
-    gemini_client, GEMINI_MODELS: list[str], types,
+    us_earnings_dict: dict | None = None,           # NEW: {wics_3rd: [earning_entry, ...]} (build_us_earnings_dict 결과)
+    gemini_client=None, GEMINI_MODELS: list[str] = None, types=None,
     chart_max_workers: int = 4,
     summary_max_workers: int = 2,
     verbose: bool = True,
@@ -656,7 +663,7 @@ def run_serialization(
     if comment_dict:
         active_codes.update(comment_dict.keys())
     if verbose:
-        print(f"[Step4] 활성 종목 (차트 대상): {len(active_codes)}개")
+        logger.info(f"[Step4] 활성 종목 (차트 대상): {len(active_codes)}개")
 
     # ─── 2. 종목 가격 차트 다운로드 ───
     chart_results = download_charts_batch(
@@ -697,7 +704,7 @@ def run_serialization(
     for wics in coverage_sector_list:
         slug = wics_slug_map.get(wics)
         if not slug:
-            if verbose: print(f"  [WARN] slug 없음: {wics}")
+            if verbose: logger.warning(f"  [WARN] slug 없음: {wics}")
             continue
 
         # 종목 dict 리스트
@@ -729,6 +736,9 @@ def run_serialization(
         # us_movers
         us_out = us_movers_dict.get(wics, [])
 
+        # us_earnings (DeepSearch 어닝콜)
+        ue_out = us_earnings_dict.get(wics, []) if us_earnings_dict else []
+
         # global research (KIS 글로벌 리서치)
         gr_out = kis_gr_news.get(wics, []) if kis_gr_news else []
 
@@ -739,10 +749,11 @@ def run_serialization(
             sector_return=sector_return,
             global_research=gr_out,
             market_data=market_data_by_slug.get(slug) if market_data_by_slug else None,
+            us_earnings=ue_out,
         )
 
     # ─── 6. AI 요약 생성 ───
-    if verbose: print(f"[Step4] AI 요약 생성: {len(sectors_data)}개 섹터")
+    if verbose: logger.info(f"[Step4] AI 요약 생성: {len(sectors_data)}개 섹터")
     summaries = generate_ai_summaries(
         sectors_data, gemini_client, GEMINI_MODELS, types,
         max_workers=summary_max_workers, verbose=verbose,
@@ -751,19 +762,21 @@ def run_serialization(
         if slug in sectors_data:
             sectors_data[slug]['ai_summary'] = bullets
 
-    # ─── 7. 섹터 JSON 저장 (날짜 suffix) ───
+    # ─── 7. 섹터 JSON 저장 (파일명 = display_date, 노출 일자 기준) ───
+    #   ⚠️ 파일명 suffix는 display_date (오늘 실행 일자) 기준
+    #   trading_date(last_trading_day, 어제)는 JSON 내부 필드로만 보존
     for slug, data in sectors_data.items():
-        out_path = os.path.join(sectors_dir, f"{slug}_{trading_date}.json")
+        out_path = os.path.join(sectors_dir, f"{slug}_{display_date}.json")
         with open(out_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
-    if verbose: print(f"[Step4] sectors/*_{trading_date}.json 저장 완료 ({len(sectors_data)}개)")
+    if verbose: logger.info(f"[Step4] sectors/*_{display_date}.json 저장 완료 ({len(sectors_data)}개)")
 
-    # ─── 8. index.json 저장 (날짜 suffix) ───
+    # ─── 8. index.json 저장 (파일명 = display_date) ───
     index_data = build_index_json(sectors_data, trading_date, display_date)
-    index_path = os.path.join(data_dir, f'index_{trading_date}.json')
+    index_path = os.path.join(data_dir, f'index_{display_date}.json')
     with open(index_path, 'w', encoding='utf-8') as f:
         json.dump(index_data, f, ensure_ascii=False, separators=(',', ':'))
-    if verbose: print(f"[Step4] index_{trading_date}.json 저장 완료")
+    if verbose: logger.info(f"[Step4] index_{display_date}.json 저장 완료")
 
     # ─── 9. wics_slug_map.json 저장 (참조용, 날짜 무관 overwrite) ───
     with open(os.path.join(data_dir, 'wics_slug_map.json'), 'w', encoding='utf-8') as f:
@@ -773,7 +786,7 @@ def run_serialization(
     prune_old_data_files(data_dir, sectors_dir, keep_n_business_days=5, verbose=verbose)
 
     if verbose:
-        print(f"[Step4] 직렬화 완료. 활성 섹터 {len(sectors_data)}개, "
+        logger.info(f"[Step4] 직렬화 완료. 활성 섹터 {len(sectors_data)}개, "
               f"활성 종목 {len(active_codes)}개, 차트 성공 {sum(chart_results.values())}개")
 
 
@@ -791,8 +804,12 @@ def prune_old_data_files(data_dir: str, sectors_dir: str,
     4) data/dates.json 생성/갱신
     
     파일명 규칙:
-    - data/index_YYYY-MM-DD.json
-    - data/sectors/{slug}_YYYY-MM-DD.json
+    - data/index_YYYY-MM-DD.json           (YYYY-MM-DD = display_date, 노출 일자)
+    - data/sectors/{slug}_YYYY-MM-DD.json  (YYYY-MM-DD = display_date)
+    
+    주의: 파일명의 날짜는 trading_date(데이터 기준일=어제)가 아니라
+          display_date(오늘 실행 일자)임. 토/일/공휴일 실행 시 display_date가
+          KRX 비영업일일 수 있으므로 latest는 keep_set에 무조건 추가함.
     """
     import re
     import glob as _glob
@@ -808,7 +825,7 @@ def prune_old_data_files(data_dir: str, sectors_dir: str,
             available_dates.add(m.group(1))
     
     if not available_dates:
-        if verbose: print("[Prune] 가용 날짜 없음, 스킵")
+        if verbose: logger.info("[Prune] 가용 날짜 없음, 스킵")
         return
     
     # ─── 2. KRX 캘린더 기준 최근 N영업일 산정 ───
@@ -827,7 +844,7 @@ def prune_old_data_files(data_dir: str, sectors_dir: str,
         # latest 포함 직전 N영업일
         keep_set = set(business_days[-keep_n_business_days:]) if business_days else {latest}
     except Exception as e:
-        if verbose: print(f"[Prune] mcal 실패 ({e}) → 단순 최근 N개 사용")
+        if verbose: logger.warning(f"[Prune] mcal 실패 ({e}) → 단순 최근 N개 사용")
         keep_set = set(sorted_dates[:keep_n_business_days])
     
     # 추가로 latest는 무조건 보존 (mcal 결과에 latest가 안 들어가는 엣지케이스 방어)
@@ -842,7 +859,7 @@ def prune_old_data_files(data_dir: str, sectors_dir: str,
                 os.remove(f)
                 deleted += 1
             except OSError as e:
-                if verbose: print(f"[Prune] {f} 삭제 실패: {e}")
+                if verbose: logger.warning(f"[Prune] {f} 삭제 실패: {e}")
     
     # ─── 4. sectors/{slug}_YYYY-MM-DD.json 삭제 ───
     sector_files = _glob.glob(os.path.join(sectors_dir, '*_*.json'))
@@ -853,7 +870,7 @@ def prune_old_data_files(data_dir: str, sectors_dir: str,
                 os.remove(f)
                 deleted += 1
             except OSError as e:
-                if verbose: print(f"[Prune] {f} 삭제 실패: {e}")
+                if verbose: logger.warning(f"[Prune] {f} 삭제 실패: {e}")
     
     # ─── 5. dates.json 재생성 (살아남은 index_*.json 기준) ───
     remaining_index = _glob.glob(os.path.join(data_dir, 'index_*.json'))
@@ -873,5 +890,5 @@ def prune_old_data_files(data_dir: str, sectors_dir: str,
         json.dump(dates_meta, f, ensure_ascii=False, indent=2)
     
     if verbose:
-        print(f"[Prune] keep={sorted(keep_set)} | 삭제={deleted}개 | "
+        logger.info(f"[Prune] keep={sorted(keep_set)} | 삭제={deleted}개 | "
               f"잔존={len(remaining_dates)}개 → dates.json 갱신")

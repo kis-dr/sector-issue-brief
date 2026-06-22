@@ -14,6 +14,9 @@ from pathlib import Path
 
 import pandas as pd
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 # ============================================================
 # 1. 애널리스트별 담당 WICS 섹터 그룹화
@@ -149,6 +152,98 @@ def _format_date_short(iso: str) -> str:
     return iso[5:10].replace("-", ".")
 
 
+# ─── US earnings 헬퍼 ───
+def _fmt_eps_usd(v) -> str:
+    """EPS 표시: $X.XX (음수는 -$X.XX)."""
+    if v is None:
+        return "-"
+    try:
+        n = float(v)
+    except (TypeError, ValueError):
+        return "-"
+    if n != n:  # NaN
+        return "-"
+    abs_n = abs(n)
+    return f"-${abs_n:.2f}" if n < 0 else f"${abs_n:.2f}"
+
+
+def _fmt_revenue_usd(v) -> str:
+    """매출 표시: $X.XXB / $X.XM / $X.XK."""
+    if v is None:
+        return "-"
+    try:
+        n = float(v)
+    except (TypeError, ValueError):
+        return "-"
+    if n != n:
+        return "-"
+    a = abs(n)
+    if a >= 1_000_000_000:
+        txt = f"${a / 1_000_000_000:.2f}B"
+    elif a >= 1_000_000:
+        txt = f"${a / 1_000_000:.1f}M"
+    elif a >= 1_000:
+        txt = f"${a / 1_000:.1f}K"
+    else:
+        txt = f"${a:.2f}"
+    return ("-" + txt) if n < 0 else txt
+
+
+def _fmt_surprise_badge_email(actual, expected) -> str:
+    """actual > expected → 빨강(BEAT), actual < expected → 파랑(MISS). 같거나 결측이면 빈문자열."""
+    if actual is None or expected is None:
+        return ""
+    try:
+        a = float(actual); e = float(expected)
+    except (TypeError, ValueError):
+        return ""
+    if a != a or e != e:
+        return ""
+    if a > e:
+        return ('<span style="font-family:Consolas,monospace;font-weight:700;background:#fce8e6;'
+                'color:#c0392b;padding:1px 6px;border-radius:2px;font-size:10px;margin-left:4px;">BEAT</span>')
+    if a < e:
+        return ('<span style="font-family:Consolas,monospace;font-weight:700;background:#e3f0ff;'
+                'color:#1565c0;padding:1px 6px;border-radius:2px;font-size:10px;margin-left:4px;">MISS</span>')
+    return ""
+
+
+def _fmt_earnings_summary_email(s: str) -> str:
+    """'다. ' 구분자로 줄바꿈, HTML 이스케이프 후 <br>로 join."""
+    if not s:
+        return ""
+    raw = str(s).strip()
+    # '다. ' 또는 '다.\n' 등 흡수
+    import re as _re
+    parts = _re.split(r"다\.\s+", raw)
+    if len(parts) == 1:
+        return _esc(raw)
+    lines = []
+    for i, p in enumerate(parts):
+        if not p:
+            continue
+        if i < len(parts) - 1:
+            lines.append(_esc(p) + "다.")
+        else:
+            lines.append(_esc(p))
+    return "<br>".join(lines)
+
+
+def _fmt_earnings_title(s: str) -> str:
+    """타이틀 정규화: '디지털 터빈 (APPS) 2026 Q4 어닝콜 녹취록' → '디지털 터빈 2026 Q4 어닝콜'."""
+    if not s:
+        return ""
+    import re as _re
+    t = str(s).strip()
+    # (TICKER) 패턴 제거 (영문/숫자/.만 허용)
+    t = _re.sub(r"\s*\([A-Za-z0-9.]+\)\s*", " ", t)
+    # 끝의 '녹취록' / 'Transcript' 제거
+    t = _re.sub(r"\s*(녹취록|Transcript)\s*$", "", t, flags=_re.IGNORECASE)
+    # 다중 공백 정리
+    t = _re.sub(r"\s{2,}", " ", t).strip()
+    return t
+
+
 def _build_sector_block(sector_data: dict, slug: str, pages_base_url: str) -> str:
     """한 섹터 분량의 HTML — Outlook-호환 (inline style + table)."""
     wics_full = f"{sector_data.get('wics_1st','')} › {sector_data.get('wics_2nd','')} › {sector_data.get('wics_3rd','')}"
@@ -244,6 +339,80 @@ def _build_sector_block(sector_data: dict, slug: str, pages_base_url: str) -> st
         us_html = (f'<div style="{h_sub_style}">🌐 US peer 동향</div>'
                    f'<div style="font-size:12px;color:#999;font-style:italic;padding:8px 0;">관련 변동 종목 없음</div>')
 
+    # ─── 섹터 US 어닝콜 (DeepSearch) ───
+    us_earnings_items = sector_data.get("us_earnings") or []
+    if us_earnings_items:
+        rows = []
+        for e in us_earnings_items[:5]:
+            ticker = _esc(e.get('ticker', ''))
+            # 타이틀 정규화 후 이스케이프
+            title_ko = _esc(_fmt_earnings_title(e.get('title_ko', '')))
+            source = e.get('source', '') or ''
+            title_html = (f'<a href="{_esc(source)}" style="color:#111;text-decoration:none;font-weight:600;">{title_ko}</a>'
+                          if source else f'<span style="color:#111;font-weight:600;">{title_ko}</span>')
+
+            td = e.get('transcript_date') or ''
+            period = e.get('period') or ''
+            meta_parts = []
+            if td:     meta_parts.append(td.replace('-', '.'))
+            if period: meta_parts.append(_esc(period))
+            meta_line = ' · '.join(meta_parts)
+
+            eps_a = e.get('eps_actual')
+            eps_e = e.get('eps_expected')
+            rev_a = e.get('revenue_actual')
+            rev_e = e.get('revenue_expected')
+
+            surp_badge = _fmt_surprise_badge_email(eps_a, eps_e)
+            rev_surp = _fmt_surprise_badge_email(rev_a, rev_e)
+
+            # 실적 vs 예상 미니 표 (Outlook 호환 inline table)
+            mini_table = (
+                f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" '
+                f'style="margin-top:6px;font-family:Consolas,monospace;font-size:11px;border:1px solid #e8e6e0;">'
+                f'<tr style="background:#fafaf7;">'
+                f'<td style="padding:4px 8px;border-bottom:1px solid #e8e6e0;color:#666;font-weight:700;">구분</td>'
+                f'<td style="padding:4px 8px;border-bottom:1px solid #e8e6e0;color:#666;font-weight:700;text-align:right;">실제</td>'
+                f'<td style="padding:4px 8px;border-bottom:1px solid #e8e6e0;color:#666;font-weight:700;text-align:right;">예상</td>'
+                f'<td style="padding:4px 8px;border-bottom:1px solid #e8e6e0;color:#666;font-weight:700;text-align:right;">서프라이즈</td>'
+                f'</tr>'
+                f'<tr>'
+                f'<td style="padding:4px 8px;border-bottom:1px solid #f5f3ee;">Revenue</td>'
+                f'<td style="padding:4px 8px;border-bottom:1px solid #f5f3ee;text-align:right;color:#111;">{_fmt_revenue_usd(rev_a)}</td>'
+                f'<td style="padding:4px 8px;border-bottom:1px solid #f5f3ee;text-align:right;color:#444;">{_fmt_revenue_usd(rev_e)}</td>'
+                f'<td style="padding:4px 8px;border-bottom:1px solid #f5f3ee;text-align:right;">{rev_surp or "-"}</td>'
+                f'</tr>'
+                f'<tr>'
+                f'<td style="padding:4px 8px;">EPS</td>'
+                f'<td style="padding:4px 8px;text-align:right;color:#111;">{_fmt_eps_usd(eps_a)}</td>'
+                f'<td style="padding:4px 8px;text-align:right;color:#444;">{_fmt_eps_usd(eps_e)}</td>'
+                f'<td style="padding:4px 8px;text-align:right;">{surp_badge or "-"}</td>'
+                f'</tr>'
+                f'</table>'
+            )
+
+            rows.append(f"""
+              <tr><td style="padding:10px 0;border-bottom:1px solid #f5f3ee;font-size:12px;">
+                <div>
+                  <span style="font-family:Consolas,monospace;font-weight:700;background:#111;color:#fff;padding:1px 6px;border-radius:2px;font-size:10px;">{ticker}</span>
+                  <span style="margin-left:6px;">{title_html}</span>
+                  {surp_badge}
+                </div>
+                {f'<div style="font-family:Consolas,monospace;font-size:10px;color:#888;margin-top:3px;">{meta_line}</div>' if meta_line else ''}
+                {mini_table}
+              </td></tr>
+            """)
+        # 섹터 페이지 상세보기 링크 (헤더 옆)
+        _sector_url_em = f"{pages_base_url.rstrip('/')}/sectors/{slug}.html"
+        _detail_link_html = (f'<a href="{_esc(_sector_url_em)}" '
+                             f'style="font-size:11px;font-weight:600;color:#1565c0;text-decoration:none;'
+                             f'margin-left:8px;">상세보기 →</a>')
+        us_earnings_html = (f'<div style="{h_sub_style}">📞 섹터 US 어닝콜{_detail_link_html}</div>'
+                            f'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">{"".join(rows)}</table>')
+    else:
+        us_earnings_html = (f'<div style="{h_sub_style}">📞 섹터 US 어닝콜</div>'
+                            f'<div style="font-size:12px;color:#999;font-style:italic;padding:8px 0;">오늘 발표된 어닝콜 없음</div>')
+
     # ─── 종목 전체 나열 (현재가 + 등락률 + 신규 이슈 상세) ───
     stocks = sector_data.get("stocks") or []
     stock_rows = []
@@ -314,7 +483,7 @@ def _build_sector_block(sector_data: dict, slug: str, pages_base_url: str) -> st
         gr_html = (f'<div style="{h_sub_style}">📚 독점 글로벌 리서치</div>'
                    f'<div style="font-size:12px;color:#999;font-style:italic;padding:8px 0;">오늘 발행된 리서치 없음</div>')
 
-    body = summary_html + news_html + gr_html + us_html + stocks_html
+    body = summary_html + news_html + gr_html + us_html + us_earnings_html + stocks_html
 
     sec_return = sector_data.get('sector_return')
     sec_return_html = ''
@@ -481,7 +650,7 @@ def send_sector_emails(*,
         full_combined_stock=combined_stock,  # 정+부 모두
     )
     if verbose:
-        print(f"[Email] 애널리스트 {len(grouped)}명")
+        logger.info(f"[Email] 애널리스트 {len(grouped)}명")
 
     # dry_run 출력 폴더
     if dry_run:
@@ -490,17 +659,17 @@ def send_sector_emails(*,
 
     sent, failed, skipped = 0, 0, 0
     for analyst_name, info in grouped.items():
-        # 섹터 JSON 모으기 (날짜 suffix 적용)
+        # 섹터 JSON 모으기 (파일명 suffix = display_date, serialize.py와 일치)
         sector_data_map = {}
         for slug in info['slugs']:
-            path = os.path.join(sectors_dir, f"{slug}_{trading_date}.json")
+            path = os.path.join(sectors_dir, f"{slug}_{display_date}.json")
             if not os.path.exists(path):
                 continue
             with open(path, 'r', encoding='utf-8') as f:
                 sector_data_map[slug] = json.load(f)
 
         if not sector_data_map:
-            if verbose: print(f"  [SKIP] {analyst_name} → 섹터 데이터 없음")
+            if verbose: logger.warning(f"  [SKIP] {analyst_name} → 섹터 데이터 없음")
             skipped += 1
             continue
 
@@ -529,20 +698,20 @@ def send_sector_emails(*,
             safe = analyst_name.replace("/", "_")
             path = out / f"{display_date}_{safe}.html"
             path.write_text(html_body, encoding="utf-8")
-            if verbose: print(f"  [DRY] {analyst_name:12s} → {path}")
+            if verbose: logger.info(f"  [DRY] {analyst_name:12s} → {path}")
             sent += 1
             continue
 
         try:
             _send_via_gmail(smtp_user, smtp_pass, to_addresses, subject, html_body)
             if verbose:
-                print(f"  [SENT] {analyst_name:12s} → {to_addresses[0]} "
+                logger.info(f"  [SENT] {analyst_name:12s} → {to_addresses[0]} "
                       f"({len(sector_data_map)}섹터)")
             sent += 1
         except Exception as e:
             if verbose:
-                print(f"  [ERR ] {analyst_name:12s} → {e}")
+                logger.warning(f"  [ERR ] {analyst_name:12s} → {e}")
             failed += 1
 
     if verbose:
-        print(f"[Email] 완료 — 발송 {sent}, 실패 {failed}, 스킵 {skipped}")
+        logger.info(f"[Email] 완료 — 발송 {sent}, 실패 {failed}, 스킵 {skipped}")

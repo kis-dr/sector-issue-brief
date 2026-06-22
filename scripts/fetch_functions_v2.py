@@ -14,6 +14,9 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests
 
+import logging
+logger = logging.getLogger(__name__)
+
 
 def _dedup_by_title_publisher(items: list[dict]) -> list[dict]:
     """
@@ -74,14 +77,14 @@ def fetch_disclosure_data(all_codes, last_trading_day,
                     disclosure_dict[code] = data
                 if verbose:
                     new_cnt = sum(1 for d in data if d.get("is_new"))
-                    print(f"[DSC {completed[0]}/{total}] {code} | "
+                    logger.info(f"[DSC {completed[0]}/{total}] {code} | "
                           f"{len(data)}건 (신규 {new_cnt})" if data
                           else f"[DSC {completed[0]}/{total}] {code} | 없음")
         except Exception as e:
             with lock:
                 completed[0] += 1
                 if verbose:
-                    print(f"[DSC {completed[0]}/{total}] ERR {code}: {e}")
+                    logger.warning(f"[DSC {completed[0]}/{total}] ERR {code}: {e}")
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         list(executor.map(_fetch_one, all_codes))
@@ -131,14 +134,14 @@ def fetch_research_data(all_codes, last_trading_day,
                     research_dict[code] = data
                 if verbose:
                     new_cnt = sum(1 for d in data if d.get("is_new"))
-                    print(f"[RSH {completed[0]}/{total}] {code} | "
+                    logger.info(f"[RSH {completed[0]}/{total}] {code} | "
                           f"{len(data)}건 (신규 {new_cnt})" if data
                           else f"[RSH {completed[0]}/{total}] {code} | 없음")
         except Exception as e:
             with lock:
                 completed[0] += 1
                 if verbose:
-                    print(f"[RSH {completed[0]}/{total}] ERR {code}: {e}")
+                    logger.warning(f"[RSH {completed[0]}/{total}] ERR {code}: {e}")
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         list(executor.map(_fetch_one, all_codes))
@@ -225,10 +228,10 @@ def fetch_consensus_data(all_codes, last_trading_day,
                 if verbose:
                     new_q = int(cons_q['is_new'].sum()) if cons_q is not None and not cons_q.empty else 0
                     new_y = int(cons_y['is_new'].sum()) if cons_y is not None and not cons_y.empty else 0
-                    print(f"[CNS {completed[0]}/{total}] {code} | Q:{new_q}new Y:{new_y}new")
+                    logger.info(f"[CNS {completed[0]}/{total}] {code} | Q:{new_q}new Y:{new_y}new")
             else:
                 if verbose:
-                    print(f"[CNS {completed[0]}/{total}] {code} DATA IMPORT 오류")
+                    logger.error(f"[CNS {completed[0]}/{total}] {code} DATA IMPORT 오류")
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         list(executor.map(_fetch_one, all_codes))
